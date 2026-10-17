@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant:wght@500;600;700&family=Readex+Pro:wght@300;400;500;600&family=Reem+Kufi:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="preload" as="image" href="assets/hero.webp" type="image/webp">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -33,47 +34,41 @@
 
   <main>
     <section class="hero" aria-labelledby="heroTitle">
-      <div class="hero-copy">
-        <svg class="cup" viewBox="0 0 80 80" aria-hidden="true">
-          <g class="steam">
-            <path d="M30 30c-5-6 5-9 0-16" />
-            <path d="M40 30c-5-7 6-10 0-19" />
-            <path d="M50 30c-5-6 5-9 0-16" />
-          </g>
-          <path class="cup-body" d="M18 38h44v6a20 20 0 0 1-20 20h-4a20 20 0 0 1-20-20Z M62 42h4a6 6 0 0 1 0 12h-6" />
-          <path class="cup-plate" d="M14 70h52" />
-        </svg>
+      <div class="hero-media">
+        <div class="hero-frame" id="heroFrame">
+          <picture>
+            <source srcset="assets/hero.webp" type="image/webp">
+            <img class="hero-img" src="assets/hero.jpg" width="1408" height="768" fetchpriority="high"
+                 alt="تراس قهوة الربض وقت الغروب، وقلعة عجلون على التلة" data-i18n-alt="heroAlt">
+          </picture>
+          <div class="sun-glow" aria-hidden="true"></div>
+          <div class="mist mist-a" aria-hidden="true"></div>
+          <div class="mist mist-b" aria-hidden="true"></div>
+          <div class="glows" id="heroGlows" aria-hidden="true"></div>
+          <svg class="hero-fx" viewBox="0 0 1408 768" aria-hidden="true">
+            <g class="birds">
+              <g class="bird"><path d="M-9 0q4.5-6 9 0q4.5-6 9 0" /></g>
+              <g class="bird"><path d="M-7 0q3.5-5 7 0q3.5-5 7 0" /></g>
+              <g class="bird"><path d="M-8 0q4-5.5 8 0q4-5.5 8 0" /></g>
+            </g>
+            <g class="steam" transform="translate(1066 640)">
+              <path d="M0 0c-5-9 5-13 0-22s5-13 0-22" />
+              <path d="M7 2c-4-8 4-12 0-20s4-12 0-20" />
+            </g>
+            <g class="steam" transform="translate(1272 574)">
+              <path d="M0 0c-4-8 4-12 0-20s4-12 0-20" />
+            </g>
+          </svg>
+          <div class="hero-dusk" aria-hidden="true"></div>
+        </div>
+      </div>
+      <div class="hero-shade" aria-hidden="true"></div>
+
+      <div class="container hero-copy">
         <h1 id="heroTitle" class="hero-title" data-i18n="heroTitle">قهوة على كتف القلعة</h1>
         <p class="hero-lead" data-i18n="heroLead">فنجان قهوة عربية، منقوشة زعتر من الفرن، وغابات البلوط حوالينا. على طريق قلعة عجلون.</p>
         <a class="btn btn-primary hero-cta" href="#menu" data-i18n="heroCta">تصفّح المنيو</a>
       </div>
-
-      <svg class="scene" viewBox="0 0 1440 600" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-        <defs>
-          <radialGradient id="glow" cx="50%" cy="50%" r="50%">
-            <stop offset="0" stop-color="#E9CF9A" stop-opacity=".35" />
-            <stop offset="1" stop-color="#E9CF9A" stop-opacity="0" />
-          </radialGradient>
-        </defs>
-        <g class="layer layer-sky">
-          <circle cx="1160" cy="200" r="110" fill="url(#glow)" />
-          <circle class="moon" cx="1160" cy="200" r="28" />
-        </g>
-        <g class="layer layer-far">
-          <path d="M0 380C180 330 360 360 540 330S900 340 1080 310 1360 320 1440 300V600H0Z" />
-        </g>
-        <g class="layer layer-mid">
-          <path class="hill" d="M0 470C200 440 420 400 600 377C660 371 700 369 740 369C900 371 1200 420 1440 400V600H0Z" />
-          <g class="castle-group" transform="translate(-280 0)">
-          <path class="castle" d="M860 382V318h12v-22h8v-8h8v8h8v-8h8v8h8v22h28v-8h8v8h8v-8h8v8h16v-48h10v-8h8v8h8v-8h8v8h10v48h26v-14h8v-8h8v8h8v-8h8v8h8v26h20v52Z" />
-          <path class="castle-windows" d="M995 304v-12a5 5 0 0 1 10 0v12ZM885 330v-10a4 4 0 0 1 8 0v10ZM1065 336v-10a4 4 0 0 1 8 0v10ZM940 352v-14a7 7 0 0 1 14 0v14Z" />
-          </g>
-        </g>
-        <g class="layer layer-near">
-          <path d="M0 520C240 480 480 540 720 505S1200 530 1440 490V600H0Z" />
-          <path d="M-10 480L-2 501H-5L5 521H-8V526H-12V521H-25L-15 501H-18ZM26 485L34 502H30L40 518H28V522H25V518H13L22 502H19ZM54 483L62 499H58L68 514H56V519H53V514H41L50 499H47ZM74 467L82 489H78L90 511H75V517H72V511H57L69 489H65ZM94 466L105 488H100L114 509H96V515H92V509H74L88 488H83ZM116 472L124 491H120L132 509H117V514H114V509H99L111 491H107ZM160 457L171 482H166L180 505H162V512H158V505H140L154 482H149ZM205 476L213 492H210L220 507H207V512H204V507H191L201 492H197ZM232 473L239 490H235L245 507H233V512H230V507H218L228 490H224ZM258 449L270 478H265L280 505H261V513H256V505H237L252 478H246ZM292 457L304 482H299L313 507H295V514H290V507H272L286 482H281ZM326 479L332 495H329L338 511H327V515H324V511H314L322 495H319ZM350 458L361 484H356L371 509H352V516H347V509H328L343 484H338ZM376 462L387 487H382L396 511H379V517H374V511H356L370 487H365ZM403 456L416 484H410L427 511H406V519H400V511H378L395 484H389ZM428 465L439 490H434L448 513H430V520H425V513H407L421 490H416ZM470 461L482 488H476L491 514H473V521H468V514H449L464 488H458ZM516 484L523 501H520L529 518H517V522H514V518H502L511 501H508ZM555 483L563 501H559L569 518H556V522H553V518H540L550 501H547ZM574 464L586 490H581L597 515H577V522H571V515H551L567 490H561ZM608 456L621 485H615L631 513H611V521H605V513H585L601 485H595ZM645 464L657 489H652L666 512H648V519H643V512H624L639 489H634ZM676 452L691 481H684L703 509H679V516H673V509H649L668 481H661ZM707 455L718 481H713L726 506H710V513H705V506H688L702 481H697ZM745 450L758 476H752L769 501H748V508H742V501H721L738 476H732ZM786 459L795 479H791L802 498H788V504H784V498H770L781 479H777ZM823 466L830 482H827L835 497H824V501H821V497H810L819 482H816ZM845 462L852 479H849L858 496H847V500H844V496H833L842 479H839ZM885 461L892 478H889L898 495H887V500H883V495H872L881 478H878ZM914 434L926 464H920L935 492H916V500H911V492H892L907 464H902ZM944 446L957 470H951L966 494H947V500H942V494H923L938 470H932ZM985 436L998 465H992L1008 493H988V501H983V493H963L979 465H973ZM1015 456L1026 477H1021L1034 497H1017V502H1013V497H996L1009 477H1005ZM1060 465L1067 483H1064L1073 500H1061V504H1058V500H1047L1056 483H1053ZM1084 463L1093 482H1089L1100 500H1086V506H1082V500H1069L1080 482H1076ZM1119 464L1127 483H1123L1133 502H1121V507H1117V502H1105L1115 483H1111ZM1149 461L1158 482H1154L1166 503H1151V508H1146V503H1131L1143 482H1139ZM1193 451L1205 477H1200L1215 503H1196V510H1191V503H1171L1187 477H1181ZM1229 452L1239 478H1234L1248 503H1231V510H1226V503H1210L1223 478H1218ZM1272 448L1286 476H1279L1297 503H1275V510H1269V503H1246L1264 476H1258ZM1312 461L1322 482H1317L1329 503H1314V509H1310V503H1295L1307 482H1303ZM1333 451L1343 477H1339L1352 501H1335V508H1331V501H1314L1327 477H1323ZM1353 465L1361 484H1357L1367 501H1355V506H1351V501H1339L1349 484H1345ZM1380 468L1387 484H1384L1392 500H1382V504H1379V500H1369L1377 484H1374ZM1403 464L1410 481H1407L1416 497H1404V502H1401V497H1389L1399 481H1395ZM1421 433L1435 463H1429L1446 491H1424V499H1418V491H1396L1414 463H1408ZM1444 453L1452 473H1448L1459 491H1445V496H1442V491H1428L1439 473H1435Z" />
-        </g>
-      </svg>
     </section>
 
     <section class="menu" id="menu" aria-labelledby="menuTitle">
