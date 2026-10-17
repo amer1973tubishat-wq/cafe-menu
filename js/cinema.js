@@ -1,15 +1,25 @@
-// قصة السكرول: مسرح ثابت (sticky) بتتحرك فيه طبقات الصورة حسب مسافة السكرول.
-// كل القيم بتنكتب كمتغيرات CSS على <html>، والـ CSS بيركّب منها الحركة.
+// قصة السكرول: مسرح ثابت (sticky)، والسكرول جوّاه بيحرّك طبقات الصورة.
+// الطبقات بتنرسم على canvas بحجم الشاشة، فما في صور ضخمة ولا فلاتر blur على كرت الشاشة،
+// وهذا اللي بيخليها تمشي ناعمة على الموبايل. الغباش = صورة مغبّشة جاهزة بتظهر بالتدريج.
 (() => {
   const section = document.querySelector(".cinema");
   if (!section) return;
 
-  const root = document.documentElement;
+  const stage = section.querySelector(".stage");
+  const back = document.querySelector("#sceneBack");
+  const front = document.querySelector("#sceneFront");
+  const bctx = back.getContext("2d");
+  const fctx = front.getContext("2d");
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const coarse = window.matchMedia("(pointer: coarse)");
+  const narrow = window.matchMedia("(max-width: 760px)");
   const track = document.querySelector("#sightsTrack");
   const sights = document.querySelector(".sights");
   const prevBtn = document.querySelector(".sight-prev");
   const nextBtn = document.querySelector(".sight-next");
+
+  const IMG_RATIO = 1408 / 768;
+  const STORY = 3400; // كل التوقيتات تحت محسوبة على 3400px، وبتتمدد على طول القسم الفعلي
 
   const clamp = (v, min = 0, max = 1) => Math.min(max, Math.max(min, v));
   const smoothstep = (e0, e1, v) => {
@@ -22,9 +32,63 @@
     const exit = smoothstep(c, d, s);
     return { enter, exit, active: enter * (1 - exit) };
   };
-  const getScrollDistance = () =>
-    clamp(-section.getBoundingClientRect().top, 0, section.offsetHeight - window.innerHeight);
+  const scrollRange = () => Math.max(1, section.offsetHeight - stage.offsetHeight);
+  const getScrollDistance = () => clamp(-section.getBoundingClientRect().top, 0, scrollRange());
 
+  // ---------- الصور ----------
+  const imgs = {};
+  document.querySelectorAll(".scene-sources img").forEach((img) => {
+    imgs[img.dataset.layer] = img;
+  });
+  const ready = () =>
+    Object.values(imgs).every((img) => img.complete && img.naturalWidth > 0);
+
+  // ---------- حجم الـ canvas ----------
+  let W = 0;
+  let H = 0;
+  let dpr = 1;
+  function resize() {
+    const w = stage.clientWidth;
+    const h = stage.clientHeight;
+    // الموبايل: نسقف الدقة على 2 عشان الذاكرة
+    const ratio = Math.min(window.devicePixelRatio || 1, coarse.matches ? 2 : 2.5);
+    if (w === W && h === H && ratio === dpr) return;
+    W = w;
+    H = h;
+    dpr = ratio;
+    for (const c of [back, front]) {
+      c.width = Math.round(W * dpr);
+      c.height = Math.round(H * dpr);
+    }
+  }
+
+  // نفس حساب object-fit: cover مع نقطة تركيز بين القلعة والتراس
+  function frameBox() {
+    const fw = Math.max(W, H * IMG_RATIO);
+    const fh = fw / IMG_RATIO;
+    const fx = W / H < 0.8 ? 0.33 : 0.4;
+    const fy = 0.4;
+    return {
+      x: clamp(W / 2 - fw * fx, W - fw, 0),
+      y: clamp(H / 2 - fh * fy, H - fh, 0),
+      w: fw,
+      h: fh,
+    };
+  }
+
+  // يرسم طبقة بحجم الإطار، مع إزاحة وتكبير حوالين نقطة (ox, oy) نسبةً للإطار
+  function drawLayer(ctx, img, f, { tx = 0, ty = 0, scale = 1, ox = 0.5, oy = 0.5, alpha = 1 }) {
+    if (alpha <= 0.001) return;
+    const w = f.w * scale;
+    const h = f.h * scale;
+    const x = f.x + f.w * ox * (1 - scale) + tx;
+    const y = f.y + f.h * oy * (1 - scale) + ty;
+    ctx.globalAlpha = alpha;
+    ctx.drawImage(img, x * dpr, y * dpr, w * dpr, h * dpr);
+    ctx.globalAlpha = 1;
+  }
+
+  // ---------- الحالة ----------
   let targetMouseX = 0;
   let targetMouseY = 0;
   let mouseX = 0;
@@ -34,12 +98,13 @@
   let initialized = false;
   let rafPending = false;
 
-  const set = (name, value) => root.style.setProperty(name, value);
+  const set = (name, value) => stage.style.setProperty(name, value);
 
   function update() {
     rafPending = false;
     targetScroll = getScrollDistance();
-    if (!initialized || reduceMotion.matches) {
+    // على اللمس منتبع السكرول مباشرة: التنعيم فوق الـ momentum scroll بيحسس إنها معلّقة
+    if (!initialized || reduceMotion.matches || coarse.matches) {
       smoothScroll = targetScroll;
       initialized = true;
     } else {
@@ -47,11 +112,12 @@
     }
     if (Math.abs(smoothScroll - targetScroll) < 0.08) smoothScroll = targetScroll;
 
-    const still = reduceMotion.matches;
+    const still = reduceMotion.matches || coarse.matches;
     mouseX = still ? 0 : lerp(mouseX, targetMouseX, 0.12);
     mouseY = still ? 0 : lerp(mouseY, targetMouseY, 0.12);
 
-    const s = smoothScroll;
+    const s = (smoothScroll / scrollRange()) * STORY;
+    const phone = narrow.matches;
     // 1) الافتتاح: الاسم بيطلع لفوق والنص بينزل
     const introExit = smoothstep(80, 600, s);
     // 2) التراس بينفتح نصّين والكاميرا بتطير للقلعة
@@ -67,46 +133,64 @@
     const castleZoom = castle.enter * (1 - terrace.enter);
     const haze = terrace.enter; // بعد ما يرجع للتراس بيضل مغبّش لآخر القصة
     const sharedY = progress * -40;
+    // على الموبايل الإطار ضيق، فالنصّين لازم يبعدوا أكثر عشان تبين القلعة
+    const splitVw = phone ? 85 : 46;
 
-    set("--mx", mouseX.toFixed(4));
-    set("--my", mouseY.toFixed(4));
+    // ---------- الرسم ----------
+    if (W && ready() && section.getBoundingClientRect().bottom > 0) {
+      const f = frameBox();
+      bctx.clearRect(0, 0, back.width, back.height);
+      drawLayer(bctx, imgs.sky, f, { scale: 1.02 + progress * 0.06 });
 
-    set("--sky-scale", (1.02 + progress * 0.06).toFixed(4));
-    set("--sky-blur", `${(haze * 12).toFixed(2)}px`);
+      fctx.clearRect(0, 0, front.width, front.height);
+      drawLayer(fctx, imgs.hill, f, {
+        tx: mouseX * -12,
+        ty: mouseY * -6 + sharedY * 0.5,
+        scale: 1.02 + progress * 0.04 + castleZoom * 0.55,
+        ox: 0.33,
+        oy: 0.22,
+      });
+      const splitScale = 1.02 + progress * 0.08 + open * 0.6;
+      const splitY = mouseY * 10 + sharedY - open * 140;
+      // على الموبايل التكبير من الشق نفسه (44% من الصورة)، عشان كل نص يطلع لبرّا مش لجوّا الشاشة
+      const seam = 620 / 1408;
+      drawLayer(fctx, imgs.left, f, {
+        tx: (-open * splitVw * W) / 100 + mouseX * 22, ty: splitY, scale: splitScale, ox: phone ? seam : 0.21, oy: 0.7,
+      });
+      drawLayer(fctx, imgs.right, f, {
+        tx: (open * splitVw * W) / 100 + mouseX * 22, ty: splitY, scale: splitScale, ox: phone ? seam : 0.79, oy: 0.7,
+      });
+      // الغباش: نفس المشهد مغبّش مسبقاً، فوق الطبقات
+      drawLayer(fctx, imgs.blur, f, { scale: 1.06, ox: 0.33, oy: 0.4, alpha: haze });
 
-    set("--hill-x", `${(mouseX * -12).toFixed(2)}px`);
-    set("--hill-y", `${(mouseY * -6 + sharedY * 0.5).toFixed(2)}px`);
-    set("--hill-scale", (1.02 + progress * 0.04 + castleZoom * 0.55).toFixed(4));
-    set("--hill-blur", `${(haze * 10).toFixed(2)}px`);
-    set("--hill-brightness", (1 - castle.active * 0.06 - haze * 0.28).toFixed(4));
-    set("--hill-saturation", (1 + castle.active * 0.12).toFixed(4));
+      // تظليل أخضر غامق: تحت للقلعة، وكامل للتراس والبطاقات
+      const top = castle.active * 0.15 + haze * 0.5;
+      const mid = castle.active * 0.25 + haze * 0.45;
+      const bottom = castle.active * 0.82 + haze * 0.6;
+      if (top + mid + bottom > 0.002) {
+        const g = fctx.createLinearGradient(0, 0, 0, front.height);
+        g.addColorStop(0, `rgba(16, 35, 30, ${top})`);
+        g.addColorStop(0.48, `rgba(16, 35, 30, ${mid})`);
+        g.addColorStop(1, `rgba(16, 35, 30, ${bottom})`);
+        fctx.fillStyle = g;
+        fctx.fillRect(0, 0, front.width, front.height);
+      }
+      if (!stage.classList.contains("is-drawn")) stage.classList.add("is-drawn");
+    }
 
-    set("--split-left-x", `calc(${(-open * 46).toFixed(3)}vw + ${(mouseX * 22).toFixed(2)}px)`);
-    set("--split-right-x", `calc(${(open * 46).toFixed(3)}vw + ${(mouseX * 22).toFixed(2)}px)`);
-    set("--split-y", `${(mouseY * 10 + sharedY - open * 140).toFixed(2)}px`);
-    set("--split-scale", (1.02 + progress * 0.08 + open * 0.6).toFixed(4));
-    set("--split-blur", `${(haze * 10).toFixed(2)}px`);
-    set("--split-brightness", (1 - haze * 0.28).toFixed(4));
-
-    set("--title-y", `${(introExit * -210).toFixed(2)}px`);
-    set("--title-scale", (1 - introExit * 0.08).toFixed(4));
-    set("--title-opacity", (1 - introExit).toFixed(4));
-
-    set("--intro-y", `${(introExit * 90).toFixed(2)}px`);
-    set("--intro-opacity", (1 - introExit).toFixed(4));
-
-    set("--shade-top", (castle.active * 0.15 + haze * 0.5).toFixed(4));
-    set("--shade-mid", (castle.active * 0.25 + haze * 0.42).toFixed(4));
-    set("--shade-bottom", (castle.active * 0.82 + haze * 0.6).toFixed(4));
-
-    set("--panel-castle-opacity", castle.active.toFixed(4));
-    set("--panel-castle-y", `${(-castle.exit * 86 + (1 - castle.enter) * 58).toFixed(2)}px`);
-    set("--panel-terrace-opacity", terrace.active.toFixed(4));
-    set("--panel-terrace-y", `${(-terrace.exit * 86 + (1 - terrace.enter) * 58).toFixed(2)}px`);
-
-    set("--cards-x", `${((1 - cardsEnter) * 120).toFixed(3)}vw`);
-    set("--cards-title-opacity", cardsEnter.toFixed(4));
-    set("--controls-opacity", controlsEnter.toFixed(4));
+    // ---------- النصوص (CSS) ----------
+    set("--title-y", `${(introExit * -210).toFixed(1)}px`);
+    set("--title-scale", (1 - introExit * 0.08).toFixed(3));
+    set("--title-opacity", (1 - introExit).toFixed(3));
+    set("--intro-y", `${(introExit * 90).toFixed(1)}px`);
+    set("--intro-opacity", (1 - introExit).toFixed(3));
+    set("--panel-castle-opacity", castle.active.toFixed(3));
+    set("--panel-castle-y", `${(-castle.exit * 86 + (1 - castle.enter) * 58).toFixed(1)}px`);
+    set("--panel-terrace-opacity", terrace.active.toFixed(3));
+    set("--panel-terrace-y", `${(-terrace.exit * 86 + (1 - terrace.enter) * 58).toFixed(1)}px`);
+    set("--cards-x", `${((1 - cardsEnter) * 120).toFixed(2)}vw`);
+    set("--cards-title-opacity", cardsEnter.toFixed(3));
+    set("--controls-opacity", controlsEnter.toFixed(3));
     sights.classList.toggle("is-visible", cardsEnter > 0.01);
     sights.classList.toggle("is-ready", controlsEnter > 0.98);
 
@@ -212,11 +296,34 @@
   prevBtn.addEventListener("click", () => move(-1));
   nextBtn.addEventListener("click", () => move(1));
 
+  // سحب البطاقات بالإصبع
+  let touchX = null;
+  let touchY = null;
+  track.addEventListener("touchstart", (e) => {
+    touchX = e.touches[0].clientX;
+    touchY = e.touches[0].clientY;
+  }, { passive: true });
+  track.addEventListener("touchend", (e) => {
+    if (touchX === null) return;
+    const dx = e.changedTouches[0].clientX - touchX;
+    const dy = e.changedTouches[0].clientY - touchY;
+    touchX = null;
+    if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
+    const rtl = track.dir === "rtl";
+    // سحب لليسار = البطاقة الجاية بالإنجليزي، والسابقة بالعربي
+    move((dx < 0) !== rtl ? 1 : -1);
+  }, { passive: true });
+
   document.addEventListener("rabad:lang", renderCards);
   window.addEventListener("scroll", requestTick, { passive: true });
+  let resizeTimer = 0;
   window.addEventListener("resize", () => {
-    layoutCards();
-    requestTick();
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      resize();
+      layoutCards();
+      requestTick();
+    }, 120);
   });
   window.addEventListener(
     "pointermove",
@@ -228,7 +335,11 @@
     },
     { passive: true }
   );
+  Object.values(imgs).forEach((img) => {
+    if (!img.complete) img.addEventListener("load", requestTick, { once: true });
+  });
 
+  resize();
   renderCards();
   requestTick();
 })();

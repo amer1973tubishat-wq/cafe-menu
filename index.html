@@ -37,11 +37,19 @@
     <section class="cinema" id="story" aria-label="قصة قهوة الربض" data-i18n-label="storyLabel">
       <div class="stage">
         <div class="world" id="world">
-          <div class="layer layer-sky"><img class="layer-img" src="assets/layers/sky.webp" alt="" width="1408" height="768"></div>
+          <!-- المشهد بينرسم على canvas بحجم الشاشة: أخف بكثير على الموبايل من تحريك صور ضخمة بفلاتر -->
+          <canvas class="scene-canvas scene-back" id="sceneBack" aria-hidden="true"></canvas>
           <h1 class="hero-title" id="heroTitle"><span data-i18n="heroTitle">عجلون</span></h1>
-          <div class="layer layer-hill"><img class="layer-img" src="assets/layers/hill.webp" alt="" width="1408" height="768"></div>
-          <div class="layer layer-terrace-left"><img class="layer-img" src="assets/layers/terrace-left.webp" alt="" width="1408" height="768"></div>
-          <div class="layer layer-terrace-right"><img class="layer-img" src="assets/layers/terrace-right.webp" alt="" width="1408" height="768"></div>
+          <canvas class="scene-canvas scene-front" id="sceneFront" aria-hidden="true"></canvas>
+          <img class="scene-fallback" src="assets/layers/scene-blur.webp" alt="" width="704" height="384">
+          <noscript><img class="scene-fallback is-sharp" src="assets/hero.jpg" alt="" width="1408" height="768"></noscript>
+          <div class="scene-sources" hidden>
+            <img data-layer="sky" src="assets/layers/sky.webp" alt="">
+            <img data-layer="hill" src="assets/layers/hill.webp" alt="">
+            <img data-layer="left" src="assets/layers/terrace-left.webp" alt="">
+            <img data-layer="right" src="assets/layers/terrace-right.webp" alt="">
+            <img data-layer="blur" src="assets/layers/scene-blur.webp" alt="">
+          </div>
           <div class="shade" aria-hidden="true"></div>
           <div class="dusk" aria-hidden="true"></div>
         </div>

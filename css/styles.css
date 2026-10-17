@@ -44,6 +44,7 @@ body {
   line-height: 1.7;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
+  overflow-x: clip; /* clip ما بيكسر position: sticky على Safari */
 }
 
 img, svg { display: block; }
@@ -155,19 +156,12 @@ a { color: inherit; }
 .btn-ghost:hover { background: rgba(200, 180, 143, 0.1); }
 
 /* ---------- Story (cinematic scroll) ---------- */
-/* مسرح ثابت بطول الشاشة، والقسم حوله أطول بـ 3400px: السكرول جوّاه بيحرّك الطبقات بدل ما يحرّك الصفحة.
-   كل طبقة صورة بنفس حجم الصورة الأصلية ومتموضعة بنفس حساب "cover"، فبتركب على بعض بالظبط. */
-:root {
-  --mx: 0; --my: 0;
-  --sky-scale: 1.02; --sky-blur: 0px;
-  --hill-x: 0px; --hill-y: 0px; --hill-scale: 1.02; --hill-blur: 0px;
-  --hill-brightness: 1; --hill-saturation: 1;
-  --split-left-x: 0px; --split-right-x: 0px; --split-y: 0px; --split-scale: 1.02;
-  --split-blur: 0px; --split-brightness: 1;
+/* مسرح ثابت بطول الشاشة، والقسم حوله أطول: السكرول جوّاه بيحرّك المشهد بدل ما يحرّك الصفحة.
+   الصورة مقسومة لطبقات وبتنرسم على canvas (js/cinema.js). القيم اللي بتحرّك النصوص بتنكتب
+   كمتغيرات CSS على .stage بس، مش على الصفحة كلها. */
+.stage {
   --title-y: 0px; --title-scale: 1; --title-opacity: 1;
   --intro-y: 0px; --intro-opacity: 1;
-  --shade-top: 0; --shade-mid: 0; --shade-bottom: 0;
-  --shade-tint: 16, 35, 30;
   --panel-castle-opacity: 0; --panel-castle-y: 58px;
   --panel-terrace-opacity: 0; --panel-terrace-y: 58px;
   --cards-x: 120vw; --cards-title-opacity: 0; --controls-opacity: 0;
@@ -175,14 +169,17 @@ a { color: inherit; }
 }
 
 .cinema { position: relative; height: 100svh; }
-.js .cinema { height: calc(100vh + 3400px); }
+.js .cinema { height: calc(100svh + 3400px); }
+@media (max-width: 760px) {
+  .js .cinema { height: calc(100svh + 2600px); }
+}
 
 .stage {
   position: sticky;
   top: 0;
   height: 100vh;
   height: 100svh;
-  min-height: 560px;
+  min-height: 540px;
   overflow: hidden;
   isolation: isolate;
   background: var(--oak-deep);
@@ -192,64 +189,31 @@ a { color: inherit; }
   position: absolute;
   inset: 0;
   overflow: hidden;
-  container-type: size;
-  background: #d9c3ad;
+  background: #cdb39b;
 }
 
-.layer {
-  /* object-fit: cover يدوي مع نقطة تركيز بين القلعة والتراس */
-  --ratio: 1.8333;
-  --fx: 0.4;
-  --fy: 0.4;
-  --w: max(100cqw, calc(100cqh * var(--ratio)));
-  --h: calc(var(--w) / var(--ratio));
+.scene-canvas {
   position: absolute;
-  width: var(--w);
-  height: var(--h);
-  left: clamp(calc(100cqw - var(--w)), calc(50cqw - var(--w) * var(--fx)), 0px);
-  top: clamp(calc(100cqh - var(--h)), calc(50cqh - var(--h) * var(--fy)), 0px);
-  pointer-events: none;
-  user-select: none;
-  will-change: transform, filter;
-}
-@media (max-aspect-ratio: 4/5) {
-  .layer { --fx: 0.33; }
-}
-
-.layer-img {
+  inset: 0;
+  width: 100%;
+  height: 100%;
   display: block;
+}
+.scene-back { z-index: 0; }
+.scene-front { z-index: 2; }
+
+.scene-fallback {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
   width: 100%;
   height: 100%;
   max-width: none;
-  -webkit-user-drag: none;
+  object-fit: cover;
+  object-position: 36% 40%;
+  transition: opacity 600ms ease;
 }
-
-.layer-sky {
-  z-index: 0;
-  transform: scale(var(--sky-scale));
-  filter: blur(var(--sky-blur));
-}
-
-.layer-hill {
-  z-index: 2;
-  transform-origin: 33% 22%;
-  transform: translate3d(var(--hill-x), var(--hill-y), 0) scale(var(--hill-scale));
-  filter: blur(var(--hill-blur)) brightness(var(--hill-brightness)) saturate(var(--hill-saturation));
-}
-
-.layer-terrace-left,
-.layer-terrace-right {
-  z-index: 3;
-  filter: blur(var(--split-blur)) brightness(var(--split-brightness));
-}
-.layer-terrace-left {
-  transform-origin: 21% 70%;
-  transform: translate3d(var(--split-left-x), var(--split-y), 0) scale(var(--split-scale));
-}
-.layer-terrace-right {
-  transform-origin: 79% 70%;
-  transform: translate3d(var(--split-right-x), var(--split-y), 0) scale(var(--split-scale));
-}
+.stage.is-drawn .scene-fallback { opacity: 0; pointer-events: none; }
 
 /* الاسم بالسما المفتوحة فوق الوادي، ورا التلال البعيدة: لونه غامق زي ظل القلعة على سما المغرب */
 .hero-title {
@@ -280,11 +244,7 @@ a { color: inherit; }
   pointer-events: none;
   background:
     linear-gradient(to bottom, rgba(16, 35, 30, 0.55) 0%, rgba(16, 35, 30, 0) 16%),
-    linear-gradient(to top, rgba(16, 35, 30, 0.7) 0%, rgba(16, 35, 30, 0.35) 22%, rgba(16, 35, 30, 0) 42%),
-    linear-gradient(180deg,
-      rgba(var(--shade-tint), var(--shade-top)) 0%,
-      rgba(var(--shade-tint), var(--shade-mid)) 48%,
-      rgba(var(--shade-tint), var(--shade-bottom)) 100%);
+    linear-gradient(to top, rgba(16, 35, 30, 0.7) 0%, rgba(16, 35, 30, 0.35) 22%, rgba(16, 35, 30, 0) 42%);
 }
 .dusk {
   position: absolute;
