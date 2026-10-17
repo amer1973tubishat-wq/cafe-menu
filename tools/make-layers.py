@@ -66,10 +66,10 @@ sky_img.save(f'{out}/sky.webp', quality=82, method=6)
 
 # 4) نصّين التراس: الشق عند x=620
 SEAM = 620
-left_poly = [(0, 214), (178, 214), (178, 236), (200, 236), (202, 266), (600, 264), (606, 292), (582, 296), (582, 438), (SEAM, 438), (SEAM, H), (0, H)]
-right_poly = [(SEAM, 438), (642, 436), (648, 380), (660, 343), (672, 343), (686, 380), (693, 434), (760, 444), (840, 455), (907, 468), (907, 362), (920, 362),
+left_poly = [(0, 214), (178, 214), (178, 236), (200, 236), (202, 266), (600, 264), (606, 292), (582, 296), (582, 438), (SEAM + 14, 437), (SEAM + 14, H), (0, H)]
+right_poly = [(SEAM - 14, 438), (642, 436), (648, 380), (660, 343), (672, 343), (686, 380), (693, 434), (760, 444), (840, 455), (907, 468), (907, 362), (920, 362),
               (920, 474), (946, 479), (952, 420), (966, 380), (978, 370), (990, 380), (1002, 420), (1006, 492), (1009, 476), (1023, 476), (1025, 496), (1100, 509), (1200, 534),
-              (1300, 557), (1408, 581), (W, H), (SEAM, H)]
+              (1300, 557), (1408, 581), (W, H), (SEAM - 14, H)]
 
 # التلة بدون التراس: تحت خط التراس منكمّل لون المنحدر ونغمّقه، عشان لما ينفتح التراس ما يبين تراس ثاني وراه
 tm = Image.new('L', (W, H), 0); d = ImageDraw.Draw(tm)
@@ -88,18 +88,17 @@ fill = np.stack([blur(hill_arr[..., c], 26) for c in range(3)], -1)
 keep = np.zeros((H, W), bool)
 for x in range(W):
     keep[ty[x]:min(H, ty[x] + 8), x] = True  # شريط من البكسلات الأصلية تحت حافة التراس
-use_fill = tmask & ~keep
+use_fill = tmask & ~keep & (np.abs(X - SEAM) > 28)
 hill_arr = np.where(use_fill[..., None], fill, a)
 hill = Image.fromarray(np.clip(hill_arr, 0, 255).astype(np.uint8)); hill.putalpha(alpha_hill)
 hill.save(f'{out}/hill.webp', quality=82, method=6)
 
 for name, poly in (('terrace-left', left_poly), ('terrace-right', right_poly)):
     m = Image.new('L', (W, H), 0); ImageDraw.Draw(m).polygon(poly, fill=255)
-    soft = m.filter(ImageFilter.GaussianBlur(3))
-    # الشق نفسه حاد، عشان النصين يركبوا على بعض بالظبط
-    sa = np.asarray(soft).copy(); ma = np.asarray(m)
-    edge = (np.abs(X - SEAM) < 6)
-    sa[edge] = ma[edge]
+    soft = np.asarray(m.filter(ImageFilter.GaussianBlur(3))).astype(np.float64)
+    # الشق ناعم: النصّين بيتداخلوا على 24px، وورا الشق التلة محتفظة بالبكسلات الأصلية فما بيبين إشي وهم مسكّرين
+    ramp = np.clip((SEAM + 12 - X) / 24, 0, 1) if name == 'terrace-left' else np.clip((X - (SEAM - 12)) / 24, 0, 1)
+    sa = np.clip(soft * ramp, 0, 255).astype(np.uint8)
     layer = im.copy(); layer.putalpha(Image.fromarray(sa))
     layer.save(f'{out}/{name}.webp', quality=84, method=6)
 
