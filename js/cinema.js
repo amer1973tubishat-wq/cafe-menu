@@ -97,8 +97,8 @@
   function progressiveBlur(amount, from, to) {
     const mw = Math.max(1, Math.round(front.width / 4));
     const mh = Math.max(1, Math.round(front.height / 4));
-    const tw = Math.max(1, Math.round(front.width / 18));
-    const th = Math.max(1, Math.round(front.height / 18));
+    const tw = Math.max(1, Math.round(front.width / 26));
+    const th = Math.max(1, Math.round(front.height / 26));
     if (mid.width !== mw || mid.height !== mh) { mid.width = mw; mid.height = mh; }
     if (tiny.width !== tw || tiny.height !== th) { tiny.width = tw; tiny.height = th; }
     for (const c of [mctx, tctx]) { c.imageSmoothingEnabled = true; c.imageSmoothingQuality = "high"; }
@@ -198,7 +198,14 @@
         tx: (open * splitVw * W) / 100 + mouseX * 22, ty: splitY, scale: splitScale, ox: phone ? seam : 0.79, oy: 0.7, alpha: splitAlpha,
       });
       // مرحلة القلعة: ورا الكلام الخلفية بتتغبّش بالتدريج
-      if (castle.active > 0.01) progressiveBlur(castle.active, phone ? 0.2 : 0.24, phone ? 0.46 : 0.52);
+      // الغباش بيغطي الشاشة كلها من أول ما يبلّش التراس ينفتح لحد ما يتسكّر،
+      // ولما الكاميرا توصل القلعة بس الجزء الفوقاني بيرجع واضح
+      const blurAmt = smoothstep(0, 0.25, castle.enter) * (1 - smoothstep(0.5, 1, terrace.enter));
+      if (blurAmt > 0.01) {
+        const settle = smoothstep(0.65, 1, castle.enter) * (1 - castle.exit);
+        const from = (phone ? 0.2 : 0.24) * settle;
+        progressiveBlur(blurAmt, from, from + 0.01 + (phone ? 0.26 : 0.28) * settle);
+      }
       // الغباش: نفس المشهد مغبّش مسبقاً، فوق الطبقات
       drawLayer(fctx, imgs.blur, f, { scale: 1.06, ox: 0.33, oy: 0.4, alpha: haze });
 

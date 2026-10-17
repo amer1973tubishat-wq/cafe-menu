@@ -89,7 +89,11 @@ keep = np.zeros((H, W), bool)
 for x in range(W):
     keep[ty[x]:min(H, ty[x] + 8), x] = True  # شريط من البكسلات الأصلية تحت حافة التراس
 use_fill = tmask & ~keep
-hill_arr = np.where(use_fill[..., None], fill, a)
+# حواف التعبئة ناعمة (30px) عشان ما يبين شكل الشماسي والتراس
+wfill = blur(use_fill.astype(np.float64), 18)
+wfill = np.where(use_fill, np.maximum(wfill, 0.5), wfill)[..., None]
+wfill = np.clip((wfill - 0.0) * 1.0, 0, 1)
+hill_arr = a * (1 - wfill) + fill * wfill
 hill = Image.fromarray(np.clip(hill_arr, 0, 255).astype(np.uint8)); hill.putalpha(alpha_hill)
 hill.save(f'{out}/hill.webp', quality=82, method=6)
 
