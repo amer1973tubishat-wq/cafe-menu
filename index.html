@@ -11,6 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant:wght@500;600;700&family=Readex+Pro:wght@300;400;500;600&family=Reem+Kufi:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="preload" as="image" href="assets/layers/hill.webp" type="image/webp">
+  <link rel="preload" as="image" href="assets/layers/sky.webp" type="image/webp">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -37,19 +38,17 @@
     <section class="cinema" id="story" aria-label="قصة قهوة الربض" data-i18n-label="storyLabel">
       <div class="stage">
         <div class="world" id="world">
-          <!-- المشهد بينرسم على canvas بحجم الشاشة: أخف بكثير على الموبايل من تحريك صور ضخمة بفلاتر -->
-          <canvas class="scene-canvas scene-back" id="sceneBack" aria-hidden="true"></canvas>
-          <h1 class="hero-title" id="heroTitle"><span data-i18n="heroTitle">عجلون</span></h1>
-          <canvas class="scene-canvas scene-front" id="sceneFront" aria-hidden="true"></canvas>
-          <img class="scene-fallback" src="assets/layers/scene-blur.webp" alt="" width="704" height="384">
-          <noscript><img class="scene-fallback is-sharp" src="assets/hero.jpg" alt="" width="1408" height="768"></noscript>
-          <div class="scene-sources" hidden>
-            <img data-layer="sky" src="assets/layers/sky.webp" alt="">
-            <img data-layer="hill" src="assets/layers/hill.webp" alt="">
-            <img data-layer="left" src="assets/layers/terrace-left.webp" alt="">
-            <img data-layer="right" src="assets/layers/terrace-right.webp" alt="">
-            <img data-layer="blur" src="assets/layers/scene-blur.webp" alt="">
+          <!-- كل طبقة div بحجم الشاشة بالضبط، والحركة تكبير وإزاحة وشفافية بس: أخف إشي على كرت الشاشة -->
+          <div class="scene-breathe">
+            <div class="bg bg-sky" data-layer="sky"></div>
+            <h1 class="hero-title" id="heroTitle"><span data-i18n="heroTitle">عجلون</span></h1>
+            <div class="bg bg-hill" data-layer="hill"></div>
+            <div class="bg bg-left" data-layer="left"></div>
+            <div class="bg bg-right" data-layer="right"></div>
+            <div class="bg bg-blur" data-layer="blurFull"></div>
+            <div class="blur-mask"><div class="bg bg-blur" data-layer="blurMask"></div></div>
           </div>
+          <div class="haze" aria-hidden="true"></div>
           <div class="shade" aria-hidden="true"></div>
           <div class="dusk" aria-hidden="true"></div>
         </div>
@@ -70,11 +69,6 @@
             <div><dt data-i18n="fact1Num">١١٨٤</dt><dd data-i18n="fact1">سنة بناء القلعة</dd></div>
             <div><dt data-i18n="fact2Num">١٢١٤</dt><dd data-i18n="fact2">سنة توسعتها</dd></div>
           </dl>
-        </section>
-
-        <section class="story-panel story-panel-terrace" aria-labelledby="terraceTitle">
-          <h2 id="terraceTitle" data-i18n="terraceTitle">الفنجان أطيب على التراس.</h2>
-          <p data-i18n="terraceText">قهوة عربية على الهيل، مناقيش من الفرن، وحلو عجلوني. اختار قسم من المنيو وإحنا بنجهّزه.</p>
         </section>
 
         <section class="sights" aria-labelledby="sightsTitle">

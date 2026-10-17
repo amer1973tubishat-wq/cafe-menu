@@ -163,15 +163,14 @@ a { color: inherit; }
   --title-y: 0px; --title-scale: 1; --title-opacity: 1;
   --intro-y: 0px; --intro-opacity: 1;
   --panel-castle-opacity: 0; --panel-castle-y: 58px;
-  --panel-terrace-opacity: 0; --panel-terrace-y: 58px;
   --cards-x: 120vw; --cards-title-opacity: 0; --controls-opacity: 0;
   --gutter: max(16px, 6vw);
 }
 
 .cinema { position: relative; height: 100svh; }
-.js .cinema { height: calc(100svh + 3400px); }
+.js .cinema { height: calc(100svh + 2600px); }
 @media (max-width: 760px) {
-  .js .cinema { height: calc(100svh + 2600px); }
+  .js .cinema { height: calc(100svh + 2000px); }
 }
 
 .stage {
@@ -192,28 +191,54 @@ a { color: inherit; }
   background: #cdb39b;
 }
 
-.scene-canvas {
+/* المشهد بيتنفّس بهدوء (حركة على كرت الشاشة بس، ما بتكلّف إشي) */
+.scene-breathe {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
+  animation: breathe 16s ease-in-out infinite alternate;
 }
-.scene-back { z-index: 0; }
-.scene-front { z-index: 2; }
+@keyframes breathe {
+  from { transform: scale(1); }
+  to { transform: scale(1.035); }
+}
 
-.scene-fallback {
+.bg {
   position: absolute;
   inset: 0;
-  z-index: 3;
-  width: 100%;
-  height: 100%;
-  max-width: none;
-  object-fit: cover;
-  object-position: 36% 40%;
-  transition: opacity 600ms ease;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: 36% 40%;
+  pointer-events: none;
 }
-.stage.is-drawn .scene-fallback { opacity: 0; pointer-events: none; }
+.bg-sky { z-index: 0; background-image: url("../assets/layers/sky.webp"); }
+.bg-hill { z-index: 2; background-image: url("../assets/layers/hill.webp"); }
+.bg-left { z-index: 3; background-image: url("../assets/layers/terrace-left.webp"); }
+.bg-right { z-index: 3; background-image: url("../assets/layers/terrace-right.webp"); }
+.bg-blur { z-index: 4; background-image: url("../assets/layers/hill-blur.webp"); opacity: 0; }
+.blur-mask {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 24%, #000 52%);
+  mask-image: linear-gradient(to bottom, transparent 24%, #000 52%);
+}
+@media (max-width: 760px) {
+  .blur-mask {
+    -webkit-mask-image: linear-gradient(to bottom, transparent 20%, #000 46%);
+    mask-image: linear-gradient(to bottom, transparent 20%, #000 46%);
+  }
+}
+.js .bg-hill, .js .bg-left, .js .bg-right, .js .bg-blur { will-change: transform, opacity; }
+
+.haze {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(16, 35, 30, 0.2) 0%, rgba(16, 35, 30, 0.35) 45%, rgba(16, 35, 30, 0.85) 100%);
+}
 
 /* الاسم بالسما المفتوحة فوق الوادي، ورا التلال البعيدة: لونه غامق زي ظل القلعة على سما المغرب */
 .hero-title {
@@ -240,7 +265,7 @@ a { color: inherit; }
 .shade {
   position: absolute;
   inset: 0;
-  z-index: 4;
+  z-index: 6;
   pointer-events: none;
   background:
     linear-gradient(to bottom, rgba(16, 35, 30, 0.55) 0%, rgba(16, 35, 30, 0) 16%),
@@ -249,7 +274,7 @@ a { color: inherit; }
 .dusk {
   position: absolute;
   inset: 0;
-  z-index: 5;
+  z-index: 7;
   background: var(--oak-deep);
   opacity: 0;
   pointer-events: none;
@@ -327,11 +352,6 @@ a { color: inherit; }
   top: 58%;
   opacity: var(--panel-castle-opacity);
   transform: translate3d(-50%, calc(-50% + var(--panel-castle-y)), 0);
-}
-.story-panel-terrace {
-  top: 42%;
-  opacity: var(--panel-terrace-opacity);
-  transform: translate3d(-50%, calc(-50% + var(--panel-terrace-y)), 0);
 }
 .facts {
   display: grid;
@@ -501,7 +521,7 @@ a { color: inherit; }
 @media (max-width: 640px) {
   /* على الموبايل ما في سما كفاية ورا القلعة، فالاسم بيطلع قدّام فوق التلة */
   .hero-title {
-    z-index: 4;
+    z-index: 5;
     left: 0;
     width: 100%;
     top: 26vh;
@@ -514,12 +534,12 @@ a { color: inherit; }
   .hero-tags { gap: 8px; }
   .hero-tags span { min-height: 38px; padding: 0 14px; font-size: 0.88rem; }
   .story-panel-castle { top: 56%; }
-  .story-panel-terrace { top: 40%; }
   .sight-card { flex-basis: min(78vw, 300px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .sights-track, .sight-card { transition: none; }
+  .scene-breathe { animation: none; }
 }
 
 /* ---------- Section heads ---------- */

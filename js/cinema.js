@@ -1,15 +1,12 @@
 // قصة السكرول: مسرح ثابت (sticky)، والسكرول جوّاه بيحرّك طبقات الصورة.
-// الطبقات بتنرسم على canvas بحجم الشاشة، فما في صور ضخمة ولا فلاتر blur على كرت الشاشة،
-// وهذا اللي بيخليها تمشي ناعمة على الموبايل. الغباش = صورة مغبّشة جاهزة بتظهر بالتدريج.
+// كل طبقة div بحجم الشاشة، والحركة تكبير وإزاحة وشفافية بس (transform/opacity)،
+// فالمتصفح بيحرّكها على كرت الشاشة بدون ما يعيد رسم إشي: سريعة على الموبايل.
+// الغباش صورة مغبّشة جاهزة بتظهر بالتدريج، مش فلتر blur.
 (() => {
   const section = document.querySelector(".cinema");
   if (!section) return;
 
   const stage = section.querySelector(".stage");
-  const back = document.querySelector("#sceneBack");
-  const front = document.querySelector("#sceneFront");
-  const bctx = back.getContext("2d");
-  const fctx = front.getContext("2d");
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const coarse = window.matchMedia("(pointer: coarse)");
   const narrow = window.matchMedia("(max-width: 760px)");
@@ -17,9 +14,19 @@
   const sights = document.querySelector(".sights");
   const prevBtn = document.querySelector(".sight-prev");
   const nextBtn = document.querySelector(".sight-next");
+  const haze = stage.querySelector(".haze");
+  const title = stage.querySelector(".hero-title");
+  const intro = stage.querySelector(".intro-copy");
+  const panel = stage.querySelector(".story-panel-castle");
+
+  const L = {};
+  stage.querySelectorAll(".bg").forEach((el) => {
+    L[el.dataset.layer] = el;
+  });
 
   const IMG_RATIO = 1408 / 768;
-  const STORY = 3400; // كل التوقيتات تحت محسوبة على 3400px، وبتتمدد على طول القسم الفعلي
+  const STORY = 2600; // التوقيتات تحت محسوبة على 2600px، وبتتمدد على طول القسم الفعلي
+  const SEAM = 620 / 1408;
 
   const clamp = (v, min = 0, max = 1) => Math.min(max, Math.max(min, v));
   const smoothstep = (e0, e1, v) => {
@@ -35,92 +42,30 @@
   const scrollRange = () => Math.max(1, section.offsetHeight - stage.offsetHeight);
   const getScrollDistance = () => clamp(-section.getBoundingClientRect().top, 0, scrollRange());
 
-  // ---------- الصور ----------
-  const imgs = {};
-  document.querySelectorAll(".scene-sources img").forEach((img) => {
-    imgs[img.dataset.layer] = img;
-  });
-  const ready = () =>
-    Object.values(imgs).every((img) => img.complete && img.naturalWidth > 0);
-
-  // ---------- حجم الـ canvas ----------
+  // ---------- مقاس الطبقات ----------
+  // نفس حساب object-fit: cover مع نقطة تركيز بين القلعة والتراس، فكل الطبقات بتركب على بعض
   let W = 0;
   let H = 0;
-  let dpr = 1;
-  function resize() {
-    const w = stage.clientWidth;
-    const h = stage.clientHeight;
-    // الموبايل: نسقف الدقة على 2 عشان الذاكرة
-    const ratio = Math.min(window.devicePixelRatio || 1, coarse.matches ? 2 : 2.5);
-    if (w === W && h === H && ratio === dpr) return;
-    W = w;
-    H = h;
-    dpr = ratio;
-    for (const c of [back, front]) {
-      c.width = Math.round(W * dpr);
-      c.height = Math.round(H * dpr);
-    }
-  }
-
-  // نفس حساب object-fit: cover مع نقطة تركيز بين القلعة والتراس
-  function frameBox() {
+  let f = { x: 0, y: 0, w: 0, h: 0 };
+  function layout() {
+    W = stage.clientWidth;
+    H = stage.clientHeight;
     const fw = Math.max(W, H * IMG_RATIO);
     const fh = fw / IMG_RATIO;
     const fx = W / H < 0.8 ? 0.33 : 0.4;
-    const fy = 0.4;
-    return {
-      x: clamp(W / 2 - fw * fx, W - fw, 0),
-      y: clamp(H / 2 - fh * fy, H - fh, 0),
-      w: fw,
-      h: fh,
-    };
-  }
-
-  // يرسم طبقة بحجم الإطار، مع إزاحة وتكبير حوالين نقطة (ox, oy) نسبةً للإطار
-  function drawLayer(ctx, img, f, { tx = 0, ty = 0, scale = 1, ox = 0.5, oy = 0.5, alpha = 1 }) {
-    if (alpha <= 0.001) return;
-    const w = f.w * scale;
-    const h = f.h * scale;
-    const x = f.x + f.w * ox * (1 - scale) + tx;
-    const y = f.y + f.h * oy * (1 - scale) + ty;
-    ctx.globalAlpha = alpha;
-    ctx.drawImage(img, x * dpr, y * dpr, w * dpr, h * dpr);
-    ctx.globalAlpha = 1;
-  }
-
-  // غباش تدريجي من فوق لتحت: نصغّر الإطار المرسوم كثير ونرجع نكبّره (ناعم وخفيف، وبيشتغل على Safari)،
-  // وبعدين نخفيه فوق بتدرّج عشان القلعة تضل واضحة والكلام تحت يقعد على خلفية ضبابية.
-  const mid = document.createElement("canvas");
-  const tiny = document.createElement("canvas");
-  const mctx = mid.getContext("2d");
-  const tctx = tiny.getContext("2d");
-  function progressiveBlur(amount, from, to) {
-    const mw = Math.max(1, Math.round(front.width / 4));
-    const mh = Math.max(1, Math.round(front.height / 4));
-    const tw = Math.max(1, Math.round(front.width / 26));
-    const th = Math.max(1, Math.round(front.height / 26));
-    if (mid.width !== mw || mid.height !== mh) { mid.width = mw; mid.height = mh; }
-    if (tiny.width !== tw || tiny.height !== th) { tiny.width = tw; tiny.height = th; }
-    for (const c of [mctx, tctx]) { c.imageSmoothingEnabled = true; c.imageSmoothingQuality = "high"; }
-    mctx.globalCompositeOperation = "copy";
-    mctx.drawImage(front, 0, 0, mw, mh);
-    tctx.globalCompositeOperation = "copy";
-    tctx.drawImage(mid, 0, 0, tw, th);
-    mctx.drawImage(tiny, 0, 0, mw, mh);
-    // قناع: شفاف فوق، كامل تحت
-    mctx.globalCompositeOperation = "destination-in";
-    const g = mctx.createLinearGradient(0, 0, 0, mh);
-    g.addColorStop(0, "rgba(0,0,0,0)");
-    g.addColorStop(from, "rgba(0,0,0,0)");
-    g.addColorStop(to, "rgba(0,0,0,1)");
-    g.addColorStop(1, "rgba(0,0,0,1)");
-    mctx.fillStyle = g;
-    mctx.fillRect(0, 0, mw, mh);
-    mctx.globalCompositeOperation = "source-over";
-    fctx.globalAlpha = amount;
-    fctx.imageSmoothingQuality = "high";
-    fctx.drawImage(mid, 0, 0, front.width, front.height);
-    fctx.globalAlpha = 1;
+    f = { x: clamp(W / 2 - fw * fx, W - fw, 0), y: clamp(H / 2 - fh * 0.4, H - fh, 0), w: fw, h: fh };
+    for (const el of Object.values(L)) {
+      el.style.backgroundSize = `${f.w}px ${f.h}px`;
+      el.style.backgroundPosition = `${f.x}px ${f.y}px`;
+    }
+    const phone = narrow.matches;
+    const origin = (ox, oy) => `${(f.x + f.w * ox).toFixed(1)}px ${(f.y + f.h * oy).toFixed(1)}px`;
+    L.hill.style.transformOrigin = origin(0.33, 0.22);
+    L.blurFull.style.transformOrigin = origin(0.33, 0.22);
+    L.blurMask.style.transformOrigin = origin(0.33, 0.22);
+    // على الموبايل التكبير من الشق نفسه، عشان كل نص يطلع لبرّا مش لجوّا الشاشة
+    L.left.style.transformOrigin = origin(phone ? SEAM : 0.21, 0.7);
+    L.right.style.transformOrigin = origin(phone ? SEAM : 0.79, 0.7);
   }
 
   // ---------- الحالة ----------
@@ -132,8 +77,18 @@
   let smoothScroll = 0;
   let initialized = false;
   let rafPending = false;
+  const last = new Map();
 
-  const set = (name, value) => stage.style.setProperty(name, value);
+  // نكتب بس لما القيمة تتغير، عشان ما نشغّل المتصفح عالفاضي
+  function put(el, prop, value) {
+    const key = el;
+    let m = last.get(key);
+    if (!m) last.set(key, (m = {}));
+    if (m[prop] === value) return;
+    m[prop] = value;
+    el.style[prop] = value;
+  }
+  const tf = (x, y, s) => `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0) scale(${s.toFixed(4)})`;
 
   function update() {
     rafPending = false;
@@ -154,89 +109,52 @@
     const s = (smoothScroll / scrollRange()) * STORY;
     const phone = narrow.matches;
     // 1) الافتتاح: الاسم بيطلع لفوق والنص بينزل
-    const introExit = smoothstep(80, 600, s);
-    // 2) التراس بينفتح نصّين والكاميرا بتطير للقلعة
-    const castle = segmentInOut(s, 450, 950, 1350, 1700);
-    // 3) رجعة للتراس، مغبّش، عشان الكلام والمنيو
-    const terrace = segmentInOut(s, 1750, 2150, 2450, 2650);
-    // 4) بطاقات أقسام المنيو بتدخل من الجنب
-    const cardsEnter = Math.pow(smoothstep(2650, 3250, s), 1.55);
-    const controlsEnter = smoothstep(3050, 3350, s);
-    const progress = clamp(s / 2650);
+    const introExit = smoothstep(80, 560, s);
+    // 2) التراس بينفتح نصّين والكاميرا بتطير للقلعة، وبتطلع قصتها
+    const castle = segmentInOut(s, 420, 900, 1300, 1600);
+    // 3) بطاقات أقسام المنيو بتدخل من الجنب فوق المشهد المغبّش
+    const cardsEnter = Math.pow(smoothstep(1550, 2150, s), 1.55);
+    const controlsEnter = smoothstep(1900, 2250, s);
+    const progress = clamp(s / 1600);
 
-    const open = Math.pow(castle.enter, 1.5) * (1 - terrace.enter);
-    const castleZoom = castle.enter * (1 - terrace.enter);
-    const haze = terrace.enter; // بعد ما يرجع للتراس بيضل مغبّش لآخر القصة
+    const open = Math.pow(castle.enter, 1.5);
+    const zoom = 1.02 + progress * 0.04 + castle.enter * 0.55;
     const sharedY = progress * -40;
-    // على الموبايل الإطار ضيق، فالنصّين لازم يبعدوا أكثر عشان تبين القلعة
     const splitVw = phone ? 85 : 46;
 
-    // ---------- الرسم ----------
-    if (W && ready() && section.getBoundingClientRect().bottom > 0) {
-      const f = frameBox();
-      bctx.clearRect(0, 0, back.width, back.height);
-      drawLayer(bctx, imgs.sky, f, { scale: 1.02 + progress * 0.06 });
+    // ---------- الطبقات ----------
+    put(L.sky, "transform", `scale(${(1.02 + progress * 0.06).toFixed(4)})`);
+    const hillT = tf(mouseX * -12, mouseY * -6 + sharedY * 0.5, zoom);
+    put(L.hill, "transform", hillT);
+    const splitScale = 1.02 + progress * 0.08 + open * 0.6;
+    const splitY = mouseY * 10 + sharedY - open * 140;
+    // النصّين بيختفوا وهم بيبعدوا، فما بيضل مستطيل بالنص
+    const splitAlpha = (1 - smoothstep(0.25, 0.9, open)).toFixed(3);
+    put(L.left, "transform", tf((-open * splitVw * W) / 100 + mouseX * 22, splitY, splitScale));
+    put(L.right, "transform", tf((open * splitVw * W) / 100 + mouseX * 22, splitY, splitScale));
+    put(L.left, "opacity", splitAlpha);
+    put(L.right, "opacity", splitAlpha);
 
-      fctx.clearRect(0, 0, front.width, front.height);
-      drawLayer(fctx, imgs.hill, f, {
-        tx: mouseX * -12,
-        ty: mouseY * -6 + sharedY * 0.5,
-        scale: 1.02 + progress * 0.04 + castleZoom * 0.55,
-        ox: 0.33,
-        oy: 0.22,
-      });
-      const splitScale = 1.02 + progress * 0.08 + open * 0.6;
-      const splitY = mouseY * 10 + sharedY - open * 140;
-      // على الموبايل التكبير من الشق نفسه (44% من الصورة)، عشان كل نص يطلع لبرّا مش لجوّا الشاشة
-      const seam = 620 / 1408;
-      // النصّين بيختفوا وهم بيبعدوا، عشان ما يضلوا حيطان على الجنبين ويعملوا مستطيل بالنص
-      const splitAlpha = 1 - smoothstep(0.25, 0.9, open);
-      drawLayer(fctx, imgs.left, f, {
-        tx: (-open * splitVw * W) / 100 + mouseX * 22, ty: splitY, scale: splitScale, ox: phone ? seam : 0.21, oy: 0.7, alpha: splitAlpha,
-      });
-      drawLayer(fctx, imgs.right, f, {
-        tx: (open * splitVw * W) / 100 + mouseX * 22, ty: splitY, scale: splitScale, ox: phone ? seam : 0.79, oy: 0.7, alpha: splitAlpha,
-      });
-      // مرحلة القلعة: ورا الكلام الخلفية بتتغبّش بالتدريج
-      // الغباش بيغطي الشاشة كلها من أول ما يبلّش التراس ينفتح لحد ما يتسكّر،
-      // ولما الكاميرا توصل القلعة بس الجزء الفوقاني بيرجع واضح
-      const blurAmt = smoothstep(0, 0.25, castle.enter) * (1 - smoothstep(0.5, 1, terrace.enter));
-      if (blurAmt > 0.01) {
-        const settle = smoothstep(0.65, 1, castle.enter) * (1 - castle.exit);
-        const from = (phone ? 0.2 : 0.24) * settle;
-        progressiveBlur(blurAmt, from, from + 0.01 + (phone ? 0.26 : 0.28) * settle);
-      }
-      // الغباش: نفس المشهد مغبّش مسبقاً، فوق الطبقات
-      drawLayer(fctx, imgs.blur, f, { scale: 1.06, ox: 0.33, oy: 0.4, alpha: haze });
+    // الغباش: كامل وقت الانتقال، وبس تحت لما الكاميرا توصل القلعة، ورجع كامل للبطاقات
+    const blur = smoothstep(0, 0.25, castle.enter);
+    const settle = smoothstep(0.65, 1, castle.enter) * (1 - castle.exit);
+    put(L.blurFull, "transform", hillT);
+    put(L.blurMask, "transform", hillT);
+    put(L.blurFull, "opacity", (blur * (1 - settle)).toFixed(3));
+    put(L.blurMask, "opacity", (blur * settle).toFixed(3));
+    put(haze, "opacity", (castle.active * 0.85 + castle.exit * 0.9).toFixed(3));
 
-      // تظليل أخضر غامق: تحت للقلعة، وكامل للتراس والبطاقات
-      const top = castle.active * 0.15 + haze * 0.5;
-      const mid = castle.active * 0.25 + haze * 0.45;
-      const bottom = castle.active * 0.82 + haze * 0.6;
-      if (top + mid + bottom > 0.002) {
-        const g = fctx.createLinearGradient(0, 0, 0, front.height);
-        g.addColorStop(0, `rgba(16, 35, 30, ${top})`);
-        g.addColorStop(0.48, `rgba(16, 35, 30, ${mid})`);
-        g.addColorStop(1, `rgba(16, 35, 30, ${bottom})`);
-        fctx.fillStyle = g;
-        fctx.fillRect(0, 0, front.width, front.height);
-      }
-      if (!stage.classList.contains("is-drawn")) stage.classList.add("is-drawn");
-    }
-
-    // ---------- النصوص (CSS) ----------
-    set("--title-y", `${(introExit * -210).toFixed(1)}px`);
-    set("--title-scale", (1 - introExit * 0.08).toFixed(3));
-    set("--title-opacity", (1 - introExit).toFixed(3));
-    set("--intro-y", `${(introExit * 90).toFixed(1)}px`);
-    set("--intro-opacity", (1 - introExit).toFixed(3));
-    set("--panel-castle-opacity", castle.active.toFixed(3));
-    set("--panel-castle-y", `${(-castle.exit * 86 + (1 - castle.enter) * 58).toFixed(1)}px`);
-    set("--panel-terrace-opacity", terrace.active.toFixed(3));
-    set("--panel-terrace-y", `${(-terrace.exit * 86 + (1 - terrace.enter) * 58).toFixed(1)}px`);
-    set("--cards-x", `${((1 - cardsEnter) * 120).toFixed(2)}vw`);
-    set("--cards-title-opacity", cardsEnter.toFixed(3));
-    set("--controls-opacity", controlsEnter.toFixed(3));
+    // ---------- النصوص ----------
+    put(title, "transform", `translate3d(0, ${(introExit * -210).toFixed(1)}px, 0) scale(${(1 - introExit * 0.08).toFixed(4)})`);
+    put(title, "opacity", (1 - introExit).toFixed(3));
+    put(intro, "transform", `translate3d(-50%, ${(introExit * 90).toFixed(1)}px, 0)`);
+    put(intro, "opacity", (1 - introExit).toFixed(3));
+    put(panel, "opacity", castle.active.toFixed(3));
+    put(panel, "transform", `translate3d(-50%, calc(-50% + ${(-castle.exit * 86 + (1 - castle.enter) * 58).toFixed(1)}px), 0)`);
+    put(sights.querySelector(".sights-viewport"), "transform",
+      `translate3d(${((1 - cardsEnter) * 120 * (track.dir === "rtl" ? -1 : 1)).toFixed(2)}vw, 0, 0)`);
+    put(sights.querySelector(".sights-title"), "opacity", cardsEnter.toFixed(3));
+    put(sights.querySelector(".sights-controls"), "opacity", controlsEnter.toFixed(3));
     sights.classList.toggle("is-visible", cardsEnter > 0.01);
     sights.classList.toggle("is-ready", controlsEnter > 0.98);
 
@@ -366,7 +284,7 @@
   window.addEventListener("resize", () => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
-      resize();
+      layout();
       layoutCards();
       requestTick();
     }, 120);
@@ -381,11 +299,7 @@
     },
     { passive: true }
   );
-  Object.values(imgs).forEach((img) => {
-    if (!img.complete) img.addEventListener("load", requestTick, { once: true });
-  });
-
-  resize();
+  layout();
   renderCards();
   requestTick();
 })();

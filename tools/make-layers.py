@@ -1,3 +1,8 @@
+"""يولّد طبقات واجهة القصة من صورة التراس الأصلية.
+
+الاستعمال: python3 tools/make-layers.py assets/hero.jpg assets/layers
+مواقع قص التراس والقلعة مضبوطة على هاي الصورة بالذات.
+"""
 import sys
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
@@ -106,10 +111,4 @@ for name, poly in (('terrace-left', left_poly), ('terrace-right', right_poly)):
     layer = im.copy(); layer.putalpha(Image.fromarray(sa))
     layer.save(f'{out}/{name}.webp', quality=84, method=6)
 
-# معاينة: الطبقات فوق خلفية ماجنتا
-prev = Image.new('RGB', (W, H), (255, 0, 255)); prev.paste(hill, (0, 0), hill); prev.save(f'{out}/../preview-hill.png')
-prev = Image.new('RGB', (W, H), (255, 0, 255))
-for n in ('terrace-left', 'terrace-right'):
-    l = Image.open(f'{out}/{n}.webp'); prev.paste(l, (0, 0), l)
-prev.save(f'{out}/../preview-terrace.png')
 print('ok')
