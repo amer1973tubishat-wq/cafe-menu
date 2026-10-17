@@ -1,7 +1,8 @@
 <!doctype html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" class="no-js">
 <head>
   <meta charset="utf-8">
+  <script>document.documentElement.classList.remove("no-js"); document.documentElement.classList.add("js");</script>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>قهوة الربض — منيو كافيه في عجلون</title>
   <meta name="description" content="منيو قهوة الربض في عجلون، الأردن: قهوة عربية ومختصة، فطور عجلوني وحلويات.">
@@ -9,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant:wght@500;600;700&family=Readex+Pro:wght@300;400;500;600&family=Reem+Kufi:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="preload" as="image" href="assets/hero.webp" type="image/webp">
+  <link rel="preload" as="image" href="assets/layers/hill.webp" type="image/webp">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -33,41 +34,55 @@
   </header>
 
   <main>
-    <section class="hero" aria-labelledby="heroTitle">
-      <div class="hero-media">
-        <div class="hero-frame" id="heroFrame">
-          <picture>
-            <source srcset="assets/hero.webp" type="image/webp">
-            <img class="hero-img" src="assets/hero.jpg" width="1408" height="768" fetchpriority="high"
-                 alt="تراس قهوة الربض وقت الغروب، وقلعة عجلون على التلة" data-i18n-alt="heroAlt">
-          </picture>
-          <div class="sun-glow" aria-hidden="true"></div>
-          <div class="mist mist-a" aria-hidden="true"></div>
-          <div class="mist mist-b" aria-hidden="true"></div>
-          <div class="glows" id="heroGlows" aria-hidden="true"></div>
-          <svg class="hero-fx" viewBox="0 0 1408 768" aria-hidden="true">
-            <g class="birds">
-              <g class="bird"><path d="M-9 0q4.5-6 9 0q4.5-6 9 0" /></g>
-              <g class="bird"><path d="M-7 0q3.5-5 7 0q3.5-5 7 0" /></g>
-              <g class="bird"><path d="M-8 0q4-5.5 8 0q4-5.5 8 0" /></g>
-            </g>
-            <g class="steam" transform="translate(1066 640)">
-              <path d="M0 0c-5-9 5-13 0-22s5-13 0-22" />
-              <path d="M7 2c-4-8 4-12 0-20s4-12 0-20" />
-            </g>
-            <g class="steam" transform="translate(1272 574)">
-              <path d="M0 0c-4-8 4-12 0-20s4-12 0-20" />
-            </g>
-          </svg>
-          <div class="hero-dusk" aria-hidden="true"></div>
+    <section class="cinema" id="story" aria-label="قصة قهوة الربض" data-i18n-label="storyLabel">
+      <div class="stage">
+        <div class="world" id="world">
+          <div class="layer layer-sky"><img class="layer-img" src="assets/layers/sky.webp" alt="" width="1408" height="768"></div>
+          <h1 class="hero-title" id="heroTitle"><span data-i18n="heroTitle">عجلون</span></h1>
+          <div class="layer layer-hill"><img class="layer-img" src="assets/layers/hill.webp" alt="" width="1408" height="768"></div>
+          <div class="layer layer-terrace-left"><img class="layer-img" src="assets/layers/terrace-left.webp" alt="" width="1408" height="768"></div>
+          <div class="layer layer-terrace-right"><img class="layer-img" src="assets/layers/terrace-right.webp" alt="" width="1408" height="768"></div>
+          <div class="shade" aria-hidden="true"></div>
+          <div class="dusk" aria-hidden="true"></div>
         </div>
-      </div>
-      <div class="hero-shade" aria-hidden="true"></div>
 
-      <div class="container hero-copy">
-        <h1 id="heroTitle" class="hero-title" data-i18n="heroTitle">قهوة على كتف القلعة</h1>
-        <p class="hero-lead" data-i18n="heroLead">فنجان قهوة عربية، منقوشة زعتر من الفرن، وغابات البلوط حوالينا. على طريق قلعة عجلون.</p>
-        <a class="btn btn-primary hero-cta" href="#menu" data-i18n="heroCta">تصفّح المنيو</a>
+        <div class="intro-copy">
+          <p data-i18n="heroLead">فنجان قهوة عربية، منقوشة زعتر من الفرن، وغابات البلوط حوالينا. على طريق قلعة عجلون.</p>
+          <div class="hero-tags">
+            <span data-i18n="tag1">قهوة عربية ومختصة</span>
+            <span data-i18n="tag2">فطور عجلوني</span>
+            <span data-i18n="tag3">إطلالة على القلعة</span>
+          </div>
+        </div>
+
+        <section class="story-panel story-panel-castle" aria-labelledby="castleTitle">
+          <h2 id="castleTitle" data-i18n="castleTitle">القلعة جارتنا من أكثر من ٨٠٠ سنة.</h2>
+          <p data-i18n="castleText">قلعة الربض بناها عز الدين أسامة ليحرس وادي الأردن. من التراس بتشوف أسوارها كل مغرب.</p>
+          <dl class="facts">
+            <div><dt data-i18n="fact1Num">١١٨٤</dt><dd data-i18n="fact1">سنة بناء القلعة</dd></div>
+            <div><dt data-i18n="fact2Num">١٢١٤</dt><dd data-i18n="fact2">سنة توسعتها</dd></div>
+          </dl>
+        </section>
+
+        <section class="story-panel story-panel-terrace" aria-labelledby="terraceTitle">
+          <h2 id="terraceTitle" data-i18n="terraceTitle">الفنجان أطيب على التراس.</h2>
+          <p data-i18n="terraceText">قهوة عربية على الهيل، مناقيش من الفرن، وحلو عجلوني. اختار قسم من المنيو وإحنا بنجهّزه.</p>
+        </section>
+
+        <section class="sights" aria-labelledby="sightsTitle">
+          <h2 class="sights-title" id="sightsTitle" data-i18n="sightsTitle">اختار من المنيو</h2>
+          <div class="sights-viewport">
+            <div class="sights-track" id="sightsTrack"></div>
+          </div>
+          <div class="sights-controls">
+            <button class="sight-nav sight-prev" type="button" aria-label="السابق" data-i18n-label="prevLabel">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
+            </button>
+            <button class="sight-nav sight-next" type="button" aria-label="التالي" data-i18n-label="nextLabel">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
+            </button>
+          </div>
+        </section>
       </div>
     </section>
 
@@ -145,5 +160,6 @@
   <script src="js/menu-data.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/cinema.js"></script>
 </body>
 </html>
