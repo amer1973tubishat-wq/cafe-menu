@@ -189,11 +189,13 @@
       const splitY = mouseY * 10 + sharedY - open * 140;
       // على الموبايل التكبير من الشق نفسه (44% من الصورة)، عشان كل نص يطلع لبرّا مش لجوّا الشاشة
       const seam = 620 / 1408;
+      // النصّين بيختفوا وهم بيبعدوا، عشان ما يضلوا حيطان على الجنبين ويعملوا مستطيل بالنص
+      const splitAlpha = 1 - smoothstep(0.25, 0.9, open);
       drawLayer(fctx, imgs.left, f, {
-        tx: (-open * splitVw * W) / 100 + mouseX * 22, ty: splitY, scale: splitScale, ox: phone ? seam : 0.21, oy: 0.7,
+        tx: (-open * splitVw * W) / 100 + mouseX * 22, ty: splitY, scale: splitScale, ox: phone ? seam : 0.21, oy: 0.7, alpha: splitAlpha,
       });
       drawLayer(fctx, imgs.right, f, {
-        tx: (open * splitVw * W) / 100 + mouseX * 22, ty: splitY, scale: splitScale, ox: phone ? seam : 0.79, oy: 0.7,
+        tx: (open * splitVw * W) / 100 + mouseX * 22, ty: splitY, scale: splitScale, ox: phone ? seam : 0.79, oy: 0.7, alpha: splitAlpha,
       });
       // مرحلة القلعة: ورا الكلام الخلفية بتتغبّش بالتدريج
       if (castle.active > 0.01) progressiveBlur(castle.active, phone ? 0.2 : 0.24, phone ? 0.46 : 0.52);
