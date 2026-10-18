@@ -204,6 +204,8 @@ a { color: inherit; }
   width: 100%;
   height: 100%;
   max-width: none;
+  /* صورة من اللوحة بمقاس غير 1408×768 ما بتنمط */
+  object-fit: cover;
 }
 
 .sun-glow,

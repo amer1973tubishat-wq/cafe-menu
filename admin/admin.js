@@ -177,6 +177,7 @@
       tagsAr: Array.isArray(it.tagsAr) ? it.tagsAr.slice() : [],
       tagsEn: Array.isArray(it.tagsEn) ? it.tagsEn.slice() : [],
       image: it.image || "",
+      ...(it.imageEdit && typeof it.imageEdit === "object" ? { imageEdit: clone(it.imageEdit) } : {}),
       price: Number(it.price) || 0,
     };
   }
@@ -397,6 +398,7 @@
     ids.forEach((id) => delete pendingMedia[id]);
     baseline = clone(draft);
     storeMoved = false;
+    pruneMedia(after);
   }
 
   function saveErrorText(e) {
@@ -411,8 +413,24 @@
   }
 
   // ---------- الصور ----------
+  // كل مكان بالموقع إله مقاس ثابت، فالصورة بتنقص هون على نفس المقاس: بتطلع بالموقع زي ما شفتها بالمحرّر بالزبط.
+  // الأصل بينحفظ كمان (<path>Edit.src) مع مكان القص، عشان «ظبّط المقاس» يرجع للصورة كاملة بأي وقت.
+  const SHAPES = {
+    item: { w: 1100, h: 759, src: 1400, label: "بطاقة الصنف ولوح التفاصيل" },
+    hero: { w: 1408, h: 768, src: 1800, label: "صورة الواجهة" },
+    logo: { w: 400, h: 400, src: 1100, label: "الشعار جنب الاسم" },
+  };
+  const shapeOf = (path) => (path === "hero.image" ? "hero" : path === "brand.logo" ? "logo" : "item");
+  const editPath = (path) => path + "Edit";
+  const MEDIA_RE = /^m[a-z0-9]{4,30}$/;
+  const newMediaId = () => "m" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const MAX_ZOOM = 5;
+  // على الجوال الطولي الواجهة بتبين شريحة من الصورة حوالين --fx (css/styles.css)
+  const PHONE_ASPECT = 9 / 19.5;
+  const PHONE_FX = 0.33;
+
   // نفس طريقة لوحة المطعم: فك الصورة من object URL، وتصغيرها، و WebP أو JPEG (سفاري ما بيكتب WebP)
-  function readImage(file) {
+  function readImage(file, maxSide) {
     return new Promise((resolve, reject) => {
       if (!file) return reject("ما اخترت ملف");
       if (file.type && !/^image\//i.test(file.type)) return reject("هاد الملف مش صورة");
@@ -425,43 +443,55 @@
       };
       img.onload = () => {
         URL.revokeObjectURL(url);
-        const out = shrinkImage(img);
+        const out = shrinkImage(img, maxSide);
         out ? resolve(out) : reject("الصورة كبيرة كثير حتى بعد الضغط");
       };
       img.src = url;
     });
   }
-  function shrinkImage(img) {
-    const w0 = img.naturalWidth || img.width;
-    const h0 = img.naturalHeight || img.height;
-    if (!w0 || !h0) return "";
-    let webp = null;
-    for (const size of [1100, 900, 760, 620, 480]) {
-      const r = Math.min(1, size / w0, size / h0);
-      const w = Math.max(1, Math.round(w0 * r));
-      const h = Math.max(1, Math.round(h0 * r));
-      const c = document.createElement("canvas");
-      c.width = w;
-      c.height = h;
-      const g = c.getContext("2d");
-      g.fillStyle = "#ffffff";
-      g.fillRect(0, 0, w, h);
-      g.drawImage(img, 0, 0, w, h);
-      for (const q of [0.78, 0.66, 0.54, 0.42]) {
-        let out = "";
-        if (webp !== false) {
-          out = c.toDataURL("image/webp", q);
-          webp = out.indexOf("data:image/webp") === 0;
-        }
-        if (!webp) out = c.toDataURL("image/jpeg", q);
-        if (out.length < IMG_MAX_CHARS) return out;
+  let webpOk = null;
+  function encode(c) {
+    for (const q of [0.78, 0.66, 0.54, 0.42]) {
+      let out = "";
+      if (webpOk !== false) {
+        out = c.toDataURL("image/webp", q);
+        webpOk = out.indexOf("data:image/webp") === 0;
       }
+      if (!webpOk) out = c.toDataURL("image/jpeg", q);
+      if (out.length < IMG_MAX_CHARS) return out;
     }
     return "";
   }
+  function shrinkImage(img, maxSide) {
+    const w0 = img.naturalWidth || img.width;
+    const h0 = img.naturalHeight || img.height;
+    if (!w0 || !h0) return "";
+    const sizes = [maxSide || 1100, 1100, 900, 760, 620, 480].filter((s, i, a) => s <= (maxSide || 1100) && a.indexOf(s) === i);
+    for (const size of sizes) {
+      const r = Math.min(1, size / w0, size / h0);
+      const c = document.createElement("canvas");
+      c.width = Math.max(1, Math.round(w0 * r));
+      c.height = Math.max(1, Math.round(h0 * r));
+      const g = c.getContext("2d");
+      g.fillStyle = "#ffffff";
+      g.fillRect(0, 0, c.width, c.height);
+      g.drawImage(img, 0, 0, c.width, c.height);
+      const out = encode(c);
+      if (out) return out;
+    }
+    return "";
+  }
+  function loadImg(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject("ما قدرنا نفتح الصورة");
+      img.src = src;
+    });
+  }
   function imgSrc(v) {
     if (!v) return "";
-    if (/^m[a-z0-9]{4,30}$/.test(v)) return MEDIA[v] || "";
+    if (MEDIA_RE.test(v)) return MEDIA[v] || "";
     if (/^assets\/[\w\-./]+$/.test(v)) return v;
     return "";
   }
@@ -472,6 +502,248 @@
     });
   }
 
+  // ---------- القص ----------
+  // p = {zoom, ox, oy, rot, bg}. zoom = 1 يعني الصورة مالية الإطار؛ ox و oy إزاحة مركزها بنسبة عرض وارتفاع الإطار.
+  // كل الأرقام نسب، فنفس p بترسم نفس القصة على المعاينة الصغيرة وعلى الملف الكبير.
+  function cropGeom(img, p, W, H) {
+    const iw = img.naturalWidth || img.width;
+    const ih = img.naturalHeight || img.height;
+    const turned = p.rot % 180 !== 0;
+    const rw = turned ? ih : iw;
+    const rh = turned ? iw : ih;
+    const cover = Math.max(W / rw, H / rh);
+    return { iw, ih, rw, rh, cover, minZoom: Math.min(W / rw, H / rh) / cover };
+  }
+  // الصورة الكبيرة ما بتترك فراغ بالإطار، والصغيرة ما بتطلع برّاه
+  function clampCrop(img, p, W, H) {
+    const gm = cropGeom(img, p, W, H);
+    p.zoom = Math.min(MAX_ZOOM, Math.max(gm.minZoom, p.zoom));
+    const s = gm.cover * p.zoom;
+    const mx = Math.abs(gm.rw * s - W) / 2 / W;
+    const my = Math.abs(gm.rh * s - H) / 2 / H;
+    p.ox = Math.min(mx, Math.max(-mx, p.ox));
+    p.oy = Math.min(my, Math.max(-my, p.oy));
+  }
+  function drawCrop(g, W, H, img, p) {
+    const gm = cropGeom(img, p, W, H);
+    const s = gm.cover * p.zoom;
+    g.fillStyle = p.bg;
+    g.fillRect(0, 0, W, H);
+    g.save();
+    g.translate(W / 2 + p.ox * W, H / 2 + p.oy * H);
+    g.rotate((p.rot * Math.PI) / 180);
+    g.imageSmoothingQuality = "high";
+    g.drawImage(img, (-gm.iw * s) / 2, (-gm.ih * s) / 2, gm.iw * s, gm.ih * s);
+    g.restore();
+  }
+  function exportCrop(img, p, shape) {
+    for (const k of [1, 0.85, 0.7, 0.55]) {
+      const c = document.createElement("canvas");
+      c.width = Math.round(shape.w * k);
+      c.height = Math.round(shape.h * k);
+      drawCrop(c.getContext("2d"), c.width, c.height, img, p);
+      const out = encode(c);
+      if (out) return out;
+    }
+    return "";
+  }
+  const freshCrop = () => ({ zoom: 1, ox: 0, oy: 0, rot: 0, bg: isHex(draft.theme.oakRaised) ? draft.theme.oakRaised : DEFAULT_THEME.oakRaised });
+  function savedCrop(info) {
+    const n = (v, d) => (Number.isFinite(Number(v)) ? Number(v) : d);
+    return {
+      zoom: n(info.zoom, 1),
+      ox: n(info.ox, 0),
+      oy: n(info.oy, 0),
+      rot: [0, 90, 180, 270].includes(info.rot) ? info.rot : 0,
+      bg: isHex(info.bg) ? info.bg : freshCrop().bg,
+    };
+  }
+
+  let editor = null;
+
+  // srcUrl: صورة جديدة لسا مش محفوظة. srcId: الأصل المحفوظ بالقاعدة.
+  function openEditor(path, img, p, src) {
+    const kind = shapeOf(path);
+    const shape = SHAPES[kind];
+    const box = document.createElement("div");
+    box.className = "crop";
+    box.setAttribute("role", "dialog");
+    box.setAttribute("aria-modal", "true");
+    box.setAttribute("aria-labelledby", "cropTitle");
+    box.innerHTML = `
+      <div class="crop-box">
+        <h2 id="cropTitle">ظبّط الصورة</h2>
+        <p class="hint">${esc(shape.label)}. اسحب الصورة لتحرّكها، وكبّر أو صغّر بالشريط أو بإصبعين. اللي جوّا الإطار هو اللي بيطلع بالموقع.</p>
+        <div class="crop-stage ${kind}" style="aspect-ratio:${shape.w} / ${shape.h}"><canvas aria-label="الصورة جوّا الإطار"></canvas></div>
+        ${kind === "hero" ? `<p class="hint">المستطيل المنقّط هو اللي بيبين على شاشة الجوال. على الكمبيوتر بتبين الصورة كلها تقريباً.</p>` : ""}
+        <label class="crop-zoom"><span>تكبير</span><input type="range" step="0.001" data-crop="zoom"></label>
+        <div class="crop-tools">
+          <button class="mini" type="button" data-crop="cover">املأ الإطار</button>
+          <button class="mini" type="button" data-crop="fit">الصورة كاملة</button>
+          <button class="mini" type="button" data-crop="rot">لفّ ↻</button>
+          <button class="mini" type="button" data-crop="reset">رجّع</button>
+          <label class="crop-bg">لون الفراغ<input type="color" data-crop="bg" value="${esc(p.bg)}"></label>
+        </div>
+        <div class="crop-foot">
+          <button class="btn" type="button" data-crop="cancel">إلغاء</button>
+          <button class="btn btn-accent" type="button" data-crop="ok">اعتمد</button>
+        </div>
+      </div>`;
+    $("#app").appendChild(box);
+    document.documentElement.classList.add("crop-open");
+    const canvas = box.querySelector("canvas");
+    const zoom = box.querySelector('[data-crop="zoom"]');
+    const ed = { path, kind, shape, img, p, src, box, canvas, zoom, back: document.activeElement };
+    editor = ed;
+
+    const ratio = () => shape.w / shape.h;
+    function draw() {
+      const cw = canvas.clientWidth || 300;
+      const ch = cw / ratio();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      if (canvas.width !== Math.round(cw * dpr)) {
+        canvas.width = Math.round(cw * dpr);
+        canvas.height = Math.round(ch * dpr);
+      }
+      const W = canvas.width;
+      const H = canvas.height;
+      clampCrop(img, p, W, H);
+      const g = canvas.getContext("2d");
+      drawCrop(g, W, H, img, p);
+      if (kind === "hero") {
+        const f = Math.min(1, PHONE_ASPECT / ratio());
+        const x0 = Math.min(1 - f, Math.max(0, PHONE_FX - f / 2)) * W;
+        g.save();
+        g.fillStyle = "rgba(0, 0, 0, 0.35)";
+        g.fillRect(0, 0, x0, H);
+        g.fillRect(x0 + f * W, 0, W - x0 - f * W, H);
+        g.setLineDash([8 * dpr, 6 * dpr]);
+        g.lineWidth = 2 * dpr;
+        g.strokeStyle = "#ffffff";
+        g.strokeRect(x0 + dpr, dpr, f * W - 2 * dpr, H - 2 * dpr);
+        g.restore();
+      }
+      const gm = cropGeom(img, p, W, H);
+      zoom.min = String(gm.minZoom);
+      zoom.max = String(MAX_ZOOM);
+      zoom.value = String(p.zoom);
+    }
+    ed.draw = draw;
+
+    // السحب بإصبع (أو ماوس) بيحرّك، وبإصبعين بيكبّر
+    const pts = new Map();
+    canvas.addEventListener("pointerdown", (e) => {
+      canvas.setPointerCapture(e.pointerId);
+      pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    });
+    canvas.addEventListener("pointermove", (e) => {
+      const prev = pts.get(e.pointerId);
+      if (!prev) return;
+      const now = { x: e.clientX, y: e.clientY };
+      if (pts.size === 1) {
+        p.ox += (now.x - prev.x) / canvas.clientWidth;
+        p.oy += (now.y - prev.y) / canvas.clientHeight;
+      } else {
+        const other = Array.from(pts.entries()).find(([id]) => id !== e.pointerId)[1];
+        const d0 = Math.hypot(prev.x - other.x, prev.y - other.y);
+        const d1 = Math.hypot(now.x - other.x, now.y - other.y);
+        if (d0 > 0) p.zoom *= d1 / d0;
+      }
+      pts.set(e.pointerId, now);
+      draw();
+    });
+    const lift = (e) => pts.delete(e.pointerId);
+    canvas.addEventListener("pointerup", lift);
+    canvas.addEventListener("pointercancel", lift);
+    canvas.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      p.zoom *= Math.exp(-e.deltaY * 0.0015);
+      draw();
+    }, { passive: false });
+
+    box.addEventListener("input", (e) => {
+      const k = e.target.dataset.crop;
+      if (k === "zoom") p.zoom = Number(e.target.value);
+      else if (k === "bg" && isHex(e.target.value)) p.bg = e.target.value;
+      else return;
+      draw();
+    });
+    box.addEventListener("click", (e) => {
+      const b = e.target.closest("button[data-crop]");
+      if (!b) return;
+      const k = b.dataset.crop;
+      if (k === "cover") Object.assign(p, { zoom: 1, ox: 0, oy: 0 });
+      else if (k === "fit") Object.assign(p, { zoom: 0, ox: 0, oy: 0 });
+      else if (k === "rot") Object.assign(p, { rot: (p.rot + 90) % 360, ox: 0, oy: 0 });
+      else if (k === "reset") Object.assign(p, freshCrop(), { bg: p.bg });
+      else if (k === "cancel") return closeEditor();
+      else if (k === "ok") return applyEditor();
+      draw();
+    });
+    box.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeEditor();
+      }
+    });
+    ed.onResize = () => draw();
+    window.addEventListener("resize", ed.onResize);
+    requestAnimationFrame(draw);
+    box.querySelector('[data-crop="ok"]').focus({ preventScroll: true });
+  }
+
+  function closeEditor() {
+    if (!editor) return;
+    const ed = editor;
+    editor = null;
+    window.removeEventListener("resize", ed.onResize);
+    ed.box.remove();
+    document.documentElement.classList.remove("crop-open");
+    if (ed.back && document.contains(ed.back)) ed.back.focus({ preventScroll: true });
+  }
+
+  function applyEditor() {
+    const ed = editor;
+    if (!ed || !draft) return;
+    const out = exportCrop(ed.img, ed.p, ed.shape);
+    if (!out) {
+      showError("ما قدرنا نجهّز الصورة. جرّب صورة أصغر.");
+      return;
+    }
+    let srcId = ed.src.id;
+    if (!srcId) {
+      srcId = newMediaId();
+      pendingMedia[srcId] = ed.src.url;
+      MEDIA[srcId] = ed.src.url;
+    }
+    const id = newMediaId();
+    pendingMedia[id] = out;
+    MEDIA[id] = out;
+    const r4 = (v) => Math.round(v * 10000) / 10000;
+    setPath(draft, ed.path, id);
+    setPath(draft, editPath(ed.path), { src: srcId, zoom: r4(ed.p.zoom), ox: r4(ed.p.ox), oy: r4(ed.p.oy), rot: ed.p.rot, bg: ed.p.bg });
+    closeEditor();
+    lastError = "";
+    render();
+    changed(400);
+  }
+
+  // «ظبّط المقاس» على صورة موجودة: من الأصل إذا انحفظ، وإلا من الصورة نفسها (صور قبل المحرّر)
+  function editImage(path) {
+    const v = getPath(draft, path) || "";
+    const info = getPath(draft, editPath(path));
+    const fromSrc = info && typeof info === "object" && MEDIA_RE.test(info.src || "") && MEDIA[info.src];
+    const srcId = fromSrc ? info.src : v;
+    if (!MEDIA[srcId]) {
+      showError("الصورة لسا بتتحمّل. استنى ثانية وجرّب كمان مرة.");
+      return;
+    }
+    loadImg(MEDIA[srcId]).then(
+      (img) => openEditor(path, img, fromSrc ? savedCrop(info) : freshCrop(), { id: srcId }),
+      (err) => showError(err),
+    );
+  }
+
   document.addEventListener("change", (e) => {
     const input = e.target;
     if (!input.matches || !input.matches("input[data-img]")) return;
@@ -480,21 +752,40 @@
     if (!file || !canEdit) return;
     const holder = input.closest(".upload");
     if (holder) holder.classList.add("busy");
-    readImage(file).then((dataUrl) => {
-      const id = "m" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-      pendingMedia[id] = dataUrl;
-      MEDIA[id] = dataUrl;
-      setPath(draft, path, id);
-      lastError = "";
-      render();
-      changed(400);
-    }, (err) => {
-      showError("ما قدرنا نستعمل الصورة: " + err);
-    }).finally(() => {
-      if (holder) holder.classList.remove("busy");
-      try { input.value = ""; } catch (_) { /* ignore */ }
-    });
+    readImage(file, SHAPES[shapeOf(path)].src)
+      .then((url) => loadImg(url).then((img) => openEditor(path, img, freshCrop(), { url })))
+      .catch((err) => showError("ما قدرنا نستعمل الصورة: " + err))
+      .finally(() => {
+        if (holder) holder.classList.remove("busy");
+        try { input.value = ""; } catch (_) { /* ignore */ }
+      });
   });
+
+  // صور ما حدا بيشاور عليها (انبدلت أو انشالت) بتنمسح بعد يوم، عشان القاعدة ما تمتلي بالأصول والنسخ القديمة
+  const MEDIA_KEEP = 24 * 3600 * 1000;
+  let pruned = false;
+  function usedMedia(d) {
+    const ids = new Set();
+    const add = (v) => { if (typeof v === "string" && MEDIA_RE.test(v)) ids.add(v); };
+    const addEdit = (e) => { if (e && typeof e === "object") add(e.src); };
+    (d.categories || []).forEach((c) => (c.items || []).forEach((it) => { add(it.image); addEdit(it.imageEdit); }));
+    if (d.hero) { add(d.hero.image); addEdit(d.hero.imageEdit); }
+    if (d.brand) { add(d.brand.logo); addEdit(d.brand.logoEdit); }
+    return ids;
+  }
+  function pruneMedia(saved) {
+    if (pruned) return;
+    pruned = true;
+    const keep = usedMedia(saved);
+    Object.keys(pendingMedia).forEach((id) => keep.add(id));
+    DB.collection("media").get().then((snap) => {
+      snap.docs.forEach((d) => {
+        const at = Number((d.data() || {}).at);
+        if (keep.has(d.id) || !Number.isFinite(at) || Date.now() - at < MEDIA_KEEP) return;
+        DB.doc("media/" + d.id).delete().then(() => { delete MEDIA[d.id]; }, () => {});
+      });
+    }).catch(() => {});
+  }
 
   // ---------- الرسم ----------
   const main = $("#main");
@@ -597,6 +888,7 @@
         <div class="img-prev${opts.wide ? " wide" : ""}${opts.square ? " square" : ""}">${prev}</div>
         <div class="img-btns">
           <label class="mini upload">${v ? "غيّر الصورة" : "اختار صورة"}<input type="file" accept="image/*" data-img="${path}"></label>
+          ${MEDIA_RE.test(v) ? `<button class="mini" type="button" data-act="edit-img" data-path="${path}">ظبّط المقاس</button>` : ""}
           ${v ? `<button class="mini" type="button" data-act="clear-img" data-path="${path}">${esc(opts.clearLabel || "شيل الصورة")}</button>` : ""}
         </div>
       </div>
@@ -628,7 +920,7 @@
         ${pair(p + ".desc", "وصف قصير (سطر، بيطلع على العجلة)", "Short description", { multi: true, rows: 2 })}
         ${pair(p + ".long", "الوصف الكامل (بأي طول، بيطلع بالتفاصيل)", "Full description", { multi: true, rows: 5, hint: "اختياري" })}
         <div class="pair">${input(p + ".tagsAr", "كلمات قصيرة", { kind: "tags", dir: "rtl", value: (it.tagsAr || []).join("، "), hint: "افصل بينها بفاصلة، مثل: سخن، بيكفي شخصين" })}${input(p + ".tagsEn", "Tags", { kind: "tags", dir: "ltr", value: (it.tagsEn || []).join(", "), hint: "Comma separated" })}</div>
-        ${imageCtl(p + ".image", { hint: "صورة بالعرض، والصنف بالنص. بتنضغط لحالها." })}
+        ${imageCtl(p + ".image", { hint: "بعد ما تختار الصورة بتفتح نافذة تظبّط فيها شو بيبين منها. «ظبّط المقاس» برجّعك لها بأي وقت." })}
         <div class="row-actions">
           <button class="mini" type="button" data-act="item-up" data-ci="${ci}" data-ii="${ii}"${ii === 0 ? " disabled" : ""} aria-label="لفوق">↑</button>
           <button class="mini" type="button" data-act="item-down" data-ci="${ci}" data-ii="${ii}"${ii === cat.items.length - 1 ? " disabled" : ""} aria-label="لتحت">↓</button>
@@ -673,7 +965,7 @@
       <p class="lede">اسم الكافيه وشعاره بيطلعوا فوق بكل صفحات الموقع.</p>
       <section class="card"><h2>الاسم</h2>${TEXT_GROUPS.cafe.map(([k, label]) => textPair(k, label)).join("")}</section>
       <section class="card"><h2>الشعار</h2>
-        ${imageCtl("brand.logo", { square: true, label: "صورة الشعار", empty: "الشعار الحالي (رسمة القلعة)", clearLabel: "رجّع رسمة القلعة", hint: "صورة مربعة، والشعار بالنص. بتطلع صغيرة جنب الاسم، ومدوّرة الزوايا." })}
+        ${imageCtl("brand.logo", { square: true, label: "صورة الشعار", empty: "الشعار الحالي (رسمة القلعة)", clearLabel: "رجّع رسمة القلعة", hint: "بتطلع صغيرة جنب الاسم ومدوّرة الزوايا. بعد ما تختارها بتظبّط شو بيبين منها بالمربع." })}
       </section>`;
   }
 
@@ -681,7 +973,7 @@
     const groups = TEXT_GROUPS.hero.map(([k, label, multi]) => textPair(k, label, multi)).join("");
     return `
       <section class="card"><h2>صورة الواجهة</h2>
-        ${imageCtl("hero.image", { wide: true, fallback: "assets/hero.jpg", label: "الصورة", clearLabel: "رجّع الصورة الأصلية", hint: "صورة بالعرض. مع صورة جديدة، أضواء التراس والطيور والبخار بتختفي لأنها مرسومة على الصورة الأصلية. حركة الكاميرا والإضاءة بتضل." })}
+        ${imageCtl("hero.image", { wide: true, fallback: "assets/hero.jpg", label: "الصورة", clearLabel: "رجّع الصورة الأصلية", hint: "بعد ما تختارها بتظبّط شو بيبين منها، وبتشوف كمان شو بيبين على الجوال. مع صورة جديدة، أضواء التراس والطيور والبخار بتختفي لأنها مرسومة على الصورة الأصلية. حركة الكاميرا والإضاءة بتضل." })}
       </section>
       <section class="card"><h2>النص على الواجهة</h2>${groups}</section>`;
   }
@@ -916,7 +1208,11 @@
         openKeys.clear();
         break;
       }
-      case "clear-img": setPath(draft, btn.dataset.path, ""); break;
+      case "clear-img":
+        setPath(draft, btn.dataset.path, "");
+        setPath(draft, editPath(btn.dataset.path), undefined);
+        break;
+      case "edit-img": editImage(btn.dataset.path); return;
       case "theme-reset": draft.theme = Object.assign({}, DEFAULT_THEME); break;
       case "pw-set": case "pw-change": case "pw-remove": passwordAction(act); return;
       default: return;
