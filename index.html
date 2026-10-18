@@ -95,15 +95,8 @@
           <p class="section-lead" data-i18n="menuLead">الأسعار بالدينار الأردني وتشمل الضريبة.</p>
         </header>
 
-        <div class="tabs-wrap">
-          <div class="tabs" role="tablist" id="tabs" aria-labelledby="menuTitle"></div>
-        </div>
-
-        <div class="menu-panel" role="tabpanel" id="menuPanel" tabindex="0">
-          <p class="menu-note" id="menuNote"></p>
-          <ul class="menu-list" id="menuList"></ul>
-          <noscript><p class="menu-note" data-i18n="noscript">شغّل JavaScript لعرض المنيو.</p></noscript>
-        </div>
+        <div class="cat-grid" id="catGrid"></div>
+        <noscript><p class="menu-note" data-i18n="noscript">شغّل JavaScript لعرض المنيو.</p></noscript>
       </div>
     </section>
 
@@ -156,12 +149,32 @@
     <p data-i18n="footer">قهوة الربض — عجلون، الأردن</p>
   </footer>
 
+  <!-- عجلة الأصناف: بتفتح بشاشة كاملة لما تكبس على قسم -->
+  <div class="wheel-overlay" id="wheelOverlay" role="dialog" aria-modal="true" aria-labelledby="wheelLabel" hidden>
+    <div class="wheel-stage" id="wheelStage" tabindex="0" role="listbox" aria-labelledby="wheelLabel">
+      <div class="wheel-drum" id="wheelDrum"></div>
+    </div>
+    <h2 class="wheel-label" id="wheelLabel"></h2>
+    <div class="wheel-front" id="wheelFront" aria-live="polite">
+      <h3 class="wheel-front-name"></h3>
+      <p class="wheel-front-desc"></p>
+      <p class="wheel-front-price"></p>
+    </div>
+    <ol class="wheel-index" id="wheelIndex"></ol>
+    <p class="wheel-count" id="wheelCount" aria-hidden="true"></p>
+    <p class="wheel-hint" data-i18n="wheelHint">اسحب أو مرّر لتشوف الأصناف</p>
+    <button class="wheel-close" type="button" id="wheelClose" aria-label="سكّر" data-i18n-label="wheelClose">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+    </button>
+  </div>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Flip.min.js"></script>
   <script src="js/menu-data.js"></script>
+  <script src="js/icons.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/app.js"></script>
   <script src="js/cinema.js"></script>
+  <script src="js/item-wheel.js"></script>
 </body>
 </html>
