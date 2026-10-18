@@ -301,15 +301,23 @@
     moved = false;
     overlay.classList.remove("has-moved");
     overlay.hidden = false;
-    document.documentElement.classList.add("wheel-open");
-    document.querySelectorAll("body > :not(.wheel-overlay):not(script)").forEach((el) => {
-      el.inert = true;
-    });
     build();
     turn = 0;
     target = 0;
     drawNow();
-    requestAnimationFrame(() => overlay.classList.add("is-open"));
+    // الفتح على مراحل، عشان ما يتجمّع كل الشغل بإطار واحد ويعلق الهاتف:
+    // هلأ البطاقات، بالإطار الجاي التلاشي، وبعده قفل الصفحة اللي ورا
+    requestAnimationFrame(() => {
+      if (!category) return;
+      overlay.classList.add("is-open");
+      requestAnimationFrame(() => {
+        if (!category) return;
+        document.documentElement.classList.add("wheel-open");
+        document.querySelectorAll("body > :not(.wheel-overlay):not(script)").forEach((el) => {
+          el.inert = true;
+        });
+      });
+    });
     stage.focus({ preventScroll: true });
     if (!pushed) {
       // بعض الصفحات المضمّنة بتمنع السجل؛ وقتها بنكتفي بزر الإغلاق و Esc
@@ -320,7 +328,7 @@
     }
     // الحلقة بتبين لحظة، وبعدين بتنفتح أسطوانة لحالها
     clearTimeout(autoOpen);
-    autoOpen = setTimeout(() => to(1), reduceMotion.matches ? 0 : 900);
+    autoOpen = setTimeout(() => to(1), reduceMotion.matches ? 0 : narrow.matches ? 600 : 900);
   }
 
   function finishClose() {

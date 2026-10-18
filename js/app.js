@@ -161,6 +161,8 @@
   const mm = gsap.matchMedia();
   mm.add("(prefers-reduced-motion: no-preference)", () => {
     const frame = $("#heroFrame");
+    const hero = $(".hero");
+    if (phone) hero.classList.add("is-css");
 
     // تقسيم العنوان لكلمات (مش لحروف، عشان الحروف العربية تضل موصولة)
     const title = $(".hero-title");
@@ -171,7 +173,11 @@
       .join(" ");
 
     // مشهد الافتتاح: الصورة بتطلع من العتمة والكاميرا بتقرّب، بعدين الأضواء بتشتعل وحدة ورا الثانية
-    gsap.timeline({ defaults: { ease: "power3.out" } })
+    gsap.timeline({
+      defaults: { ease: "power3.out" },
+      // بعد الافتتاح: الطيور والبخار بـ CSS (.is-fx)، وعلى الهاتف كل الحركة المستمرة كمان (.is-live)
+      onComplete: () => hero.classList.add("is-fx", ...(phone ? ["is-live"] : [])),
+    })
       .fromTo(".hero-dusk", { opacity: 1 }, { opacity: 0, duration: 2.4, ease: "power2.inOut" }, 0)
       .fromTo(frame, { scale: 1.22 }, { scale: 1.06, duration: 3.6, ease: "power2.out" }, 0)
       .from(".sun-glow", { opacity: 0, duration: 2.4 }, 0.6)
@@ -182,81 +188,73 @@
       .from(".hero-lead", { opacity: 0, y: 20, duration: 0.9 }, 2.4)
       .from(".hero-cta", { opacity: 0, y: 20, duration: 0.9 }, 2.6);
 
-    // حركة مستمرة هادية بعد الافتتاح، زي لقطة فيديو ما بتخلص.
-    // كلها بتنحفظ هون عشان توقف لما الواجهة تطلع برّا الشاشة: ما في حركة شغّالة وإنت بالمنيو.
-    const ambient = [];
-    const loop = (tw) => { ambient.push(tw); return tw; };
-    loop(gsap.to(frame, { scale: 1.13, xPercent: -1.6, yPercent: -0.8, duration: 24, ease: "sine.inOut", repeat: -1, yoyo: true, delay: 3.6 }));
-    loop(gsap.to(".sun-glow", { opacity: 0.55, scale: 0.92, duration: 7, ease: "sine.inOut", repeat: -1, yoyo: true, delay: 3 }));
-    loop(gsap.fromTo(".mist-a", { xPercent: -8 }, { xPercent: 10, duration: 30, ease: "sine.inOut", repeat: -1, yoyo: true }));
-    if (!phone) {
+    if (phone) {
+      // على الهاتف: ولا حركة GSAP مستمرة ولا parallax مع السكرول، فما في JavaScript بيشتغل وإنت بتمرّر.
+      // بس بنعطي كل ضو مدة وتأخير مختلفين للـ keyframes، وبعض اللمبات بس بترمش والباقي ثابت مضوي
+      const rand = (a, b) => (a + Math.random() * (b - a)).toFixed(2);
+      bulbs.forEach((b, i) => {
+        if (i % 2 || i > 10) return;
+        b.classList.add("is-flicker");
+        b.style.setProperty("--d", `${rand(2.6, 5.5)}s`);
+        b.style.setProperty("--t", `-${rand(0, 5)}s`);
+      });
+      lamps.forEach((l) => {
+        l.style.setProperty("--d", `${rand(0.9, 1.8)}s`);
+        l.style.setProperty("--t", `-${rand(0, 1.8)}s`);
+      });
+
+      // برّا الشاشة: الحركات بتوقف والصورة بتطلع من ذاكرة كرت الشاشة
+      new IntersectionObserver(([e]) => hero.classList.toggle("is-offscreen", !e.isIntersecting)).observe(hero);
+    } else {
+      // حركة مستمرة هادية بعد الافتتاح، زي لقطة فيديو ما بتخلص.
+      // كلها بتنحفظ هون عشان توقف لما الواجهة تطلع برّا الشاشة: ما في حركة شغّالة وإنت بالمنيو.
+      const ambient = [];
+      const loop = (tw) => { ambient.push(tw); return tw; };
+      loop(gsap.to(frame, { scale: 1.13, xPercent: -1.6, yPercent: -0.8, duration: 24, ease: "sine.inOut", repeat: -1, yoyo: true, delay: 3.6 }));
+      loop(gsap.to(".sun-glow", { opacity: 0.55, scale: 0.92, duration: 7, ease: "sine.inOut", repeat: -1, yoyo: true, delay: 3 }));
+      loop(gsap.fromTo(".mist-a", { xPercent: -8 }, { xPercent: 10, duration: 30, ease: "sine.inOut", repeat: -1, yoyo: true }));
       loop(gsap.fromTo(".mist-b", { xPercent: 10, opacity: 0.4 }, { xPercent: -10, opacity: 0.75, duration: 38, ease: "sine.inOut", repeat: -1, yoyo: true }));
+
+      bulbs.forEach((b) => {
+        loop(gsap.to(b, {
+          opacity: () => gsap.utils.random(0.55, 1),
+          duration: () => gsap.utils.random(0.08, 0.35),
+          repeat: -1,
+          yoyo: true,
+          repeatRefresh: true,
+          repeatDelay: () => gsap.utils.random(0.4, 3.2),
+          delay: 2.6 + Math.random() * 2,
+        }));
+      });
+      lamps.forEach((l) => {
+        loop(gsap.to(l, {
+          opacity: () => gsap.utils.random(0.7, 1),
+          scale: () => gsap.utils.random(0.9, 1.08),
+          duration: () => gsap.utils.random(0.35, 0.9),
+          ease: "sine.inOut",
+          repeat: -1,
+          yoyo: true,
+          repeatRefresh: true,
+          delay: 2.8 + Math.random(),
+        }));
+      });
+
+      window.ScrollTrigger.create({
+        trigger: ".hero",
+        start: "top bottom",
+        end: "bottom top",
+        onToggle: (self) => {
+          ambient.forEach((tw) => (self.isActive ? tw.resume() : tw.pause()));
+          // برّا الشاشة: الصورة وطبقاتها بتطلع من ذاكرة كرت الشاشة كلياً
+          hero.classList.toggle("is-offscreen", !self.isActive);
+        },
+      });
+
+      // السكرول: الكاميرا بتنزل أبطأ من الصفحة والنص بيطلع ويختفي، فالواجهة بتذوب بالمنيو
+      const heroScroll = { trigger: ".hero", start: "top top", end: "bottom top", scrub: 0.6 };
+      gsap.to(".hero-media", { yPercent: 18, scale: 1.06, ease: "none", scrollTrigger: heroScroll });
+      gsap.to(".hero-copy", { y: -80, opacity: 0, ease: "none", scrollTrigger: { ...heroScroll, end: "55% top" } });
     }
-
-    // على الهاتف بس بعض اللمبات بترمش، والباقي ثابت مضوي: نفس الإحساس بحركة أقل
-    const flicker = phone ? bulbs.filter((_, i) => i % 2 === 0).slice(0, 6) : bulbs;
-    flicker.forEach((b) => {
-      loop(gsap.to(b, {
-        opacity: () => gsap.utils.random(0.55, 1),
-        duration: () => gsap.utils.random(0.08, 0.35),
-        repeat: -1,
-        yoyo: true,
-        repeatRefresh: true,
-        repeatDelay: () => gsap.utils.random(0.4, 3.2),
-        delay: 2.6 + Math.random() * 2,
-      }));
-    });
-    lamps.forEach((l) => {
-      loop(gsap.to(l, {
-        opacity: () => gsap.utils.random(0.7, 1),
-        scale: () => gsap.utils.random(0.9, 1.08),
-        duration: () => gsap.utils.random(0.35, 0.9),
-        ease: "sine.inOut",
-        repeat: -1,
-        yoyo: true,
-        repeatRefresh: true,
-        delay: 2.8 + Math.random(),
-      }));
-    });
-
-    // بخار طالع من الفناجين
-    $$(".steam path").forEach((p, i) => {
-      loop(gsap.timeline({ repeat: -1, delay: 2 + i * 0.9, repeatDelay: 0.4 })
-        .fromTo(p, { y: 6, opacity: 0, scaleX: 0.7, transformOrigin: "50% 100%" }, { y: -10, opacity: 0.7, scaleX: 1, duration: 1.4, ease: "sine.out" })
-        .to(p, { y: -26, opacity: 0, scaleX: 1.3, duration: 1.6, ease: "sine.in" }));
-    });
-
-    // طيور بتقطع السما فوق الوادي (على الهاتف طير واحد)
-    const flights = [
-      { y: 150, dy: -22, dur: 30, delay: 2.5 },
-      { y: 176, dy: 10, dur: 27, delay: 4 },
-      { y: 138, dy: -12, dur: 34, delay: 9 },
-    ];
-    $$(".bird").forEach((bird, i) => {
-      if (phone && i > 0) {
-        bird.style.display = "none";
-        return;
-      }
-      const f = flights[i];
-      loop(gsap.fromTo(bird, { x: 660, y: f.y }, { x: 1460, y: f.y + f.dy, duration: f.dur, ease: "none", repeat: -1, delay: f.delay }));
-      loop(gsap.to($("path", bird), { scaleY: 0.25, transformOrigin: "50% 50%", duration: 0.22, ease: "sine.inOut", repeat: -1, yoyo: true, delay: i * 0.1 }));
-    });
-
-    window.ScrollTrigger.create({
-      trigger: ".hero",
-      start: "top bottom",
-      end: "bottom top",
-      onToggle: (self) => {
-        ambient.forEach((tw) => (self.isActive ? tw.resume() : tw.pause()));
-        // برّا الشاشة: الصورة وطبقاتها بتطلع من ذاكرة كرت الشاشة كلياً
-        $(".hero").classList.toggle("is-offscreen", !self.isActive);
-      },
-    });
-
-    // السكرول: الكاميرا بتنزل أبطأ من الصفحة والنص بيطلع ويختفي، فالواجهة بتذوب بالمنيو
-    const heroScroll = { trigger: ".hero", start: "top top", end: "bottom top", scrub: 0.6 };
-    gsap.to(".hero-media", { yPercent: 18, scale: 1.06, ease: "none", scrollTrigger: heroScroll });
-    gsap.to(".hero-copy", { y: -80, opacity: 0, ease: "none", scrollTrigger: { ...heroScroll, end: "55% top" } });
 
     $$(".section-title").forEach((el) => {
       gsap.from(el, {

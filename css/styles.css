@@ -189,6 +189,8 @@ a { color: inherit; }
   top: clamp(calc(100cqh - var(--h)), calc(50cqh - var(--h) * var(--fy)), 0px);
   transform-origin: 38% 40%;
   will-change: transform;
+  /* حجم الصورة نفسها، للطيور (cqw و cqh) */
+  container-type: size;
 }
 
 @media (max-aspect-ratio: 4/5) {
@@ -249,7 +251,13 @@ a { color: inherit; }
   background: radial-gradient(circle, rgba(255, 220, 160, 0.9) 0%, rgba(255, 180, 100, 0.35) 25%, rgba(255, 160, 80, 0) 68%);
 }
 
-.hero-fx { inset: 0; width: 100%; height: 100%; overflow: visible; }
+.hero-fx { inset: 0; }
+.bird,
+.steam { position: absolute; display: block; }
+.bird svg,
+.steam svg { display: block; width: 100%; height: auto; overflow: visible; }
+/* الطير بيطير بـ translateX بوحدات cqw (عرض الصورة)، فبيوصل لنفس المكان على كل الشاشات */
+.bird { left: 0; width: 1.28%; }
 .bird path {
   fill: none;
   stroke: #3b2f2c;
@@ -258,14 +266,19 @@ a { color: inherit; }
   stroke-linejoin: round;
   opacity: 0.75;
 }
+.steam { width: 0.85%; opacity: 0; transform-origin: 50% 100%; }
 .steam path {
   fill: none;
   stroke: rgba(255, 246, 236, 0.75);
   stroke-width: 2.2;
   stroke-linecap: round;
-  opacity: 0;
   filter: blur(1.2px);
 }
+/* بيبلشوا بعد الافتتاح (.is-fx من js/app.js)، وكلها transform و opacity على عناصر HTML: حركة على كرت الشاشة */
+.hero:not(.is-fx) .bird { display: none; }
+.hero.is-fx .bird { animation: bird-fly var(--dur, 30s) linear var(--del, 0s) infinite both; }
+.hero.is-fx .bird svg { animation: wing-flap 0.44s ease-in-out infinite; }
+.hero.is-fx .steam { animation: steam-rise 3.4s ease-in-out var(--del, 0s) infinite both; }
 
 .hero-dusk {
   inset: 0;
@@ -326,6 +339,58 @@ a { color: inherit; }
   .hero-copy { text-shadow: 0 1px 10px rgba(10, 22, 19, 0.55); }
 }
 
+/* الهاتف: الحركة المستمرة بعد الافتتاح بـ CSS، فبتشتغل على كرت الشاشة وما بتزاحم السكرول.
+   ‎.is-css بينحط من js/app.js على الهاتف، و .is-live لما يخلص الافتتاح. --d و --t (مدة وتأخير لكل ضو) برضو من هناك.
+   الطيور والبخار بـ CSS على كل الشاشات (فوق) */
+.hero.is-live .hero-frame { animation: hero-drift 24s ease-in-out infinite alternate; }
+.hero.is-live .sun-glow { animation: hero-breathe 7s ease-in-out infinite alternate; }
+.hero.is-live .mist-a { animation: hero-mist 30s ease-in-out infinite alternate; }
+.hero.is-live .glow-bulb.is-flicker { animation: bulb-flicker var(--d) linear var(--t) infinite; }
+.hero.is-live .glow-lamp { animation: lamp-breathe var(--d) ease-in-out var(--t) infinite alternate; }
+.hero.is-css .bird:not(:first-child) { display: none; }
+.hero.is-offscreen * { animation-play-state: paused !important; }
+
+@keyframes hero-drift {
+  from { transform: scale(1.06); }
+  to { transform: translate(-1.6%, -0.8%) scale(1.13); }
+}
+@keyframes hero-breathe {
+  from { opacity: 0.7; transform: scale(1); }
+  to { opacity: 0.45; transform: scale(0.92); }
+}
+@keyframes hero-mist {
+  from { transform: translateX(-8%); }
+  to { transform: translateX(10%); }
+}
+/* رمشات قصيرة متفرقة بين فترات ثبات، زي لمبة سلك قديم */
+@keyframes bulb-flicker {
+  0%, 100% { opacity: 1; }
+  6% { opacity: 0.6; }
+  10% { opacity: 1; }
+  48% { opacity: 1; }
+  52% { opacity: 0.7; }
+  55% { opacity: 0.95; }
+  58% { opacity: 0.6; }
+  63% { opacity: 1; }
+}
+@keyframes lamp-breathe {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0.72; transform: scale(0.92); }
+}
+@keyframes steam-rise {
+  0% { opacity: 0; transform: translateY(12%) scaleX(0.7); }
+  40% { opacity: 0.7; transform: translateY(-21%) scaleX(1); }
+  88%, 100% { opacity: 0; transform: translateY(-54%) scaleX(1.3); }
+}
+@keyframes bird-fly {
+  from { transform: translate(46.9cqw, 0); }
+  to { transform: translate(103.7cqw, -2.5cqh); }
+}
+@keyframes wing-flap {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(0.25); }
+}
+
 /* ---------- Section heads ---------- */
 .section-title {
   margin: 0;
@@ -368,9 +433,15 @@ a { color: inherit; }
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.22);
   transition: transform 300ms var(--ease-out), box-shadow 300ms var(--ease-out);
 }
-.cat-card:hover { transform: translateY(-4px); box-shadow: 0 26px 60px rgba(0, 0, 0, 0.32); }
+@media (hover: hover) {
+  .cat-card:hover { transform: translateY(-4px); box-shadow: 0 26px 60px rgba(0, 0, 0, 0.32); }
+}
 .cat-card:active { transform: scale(0.98); }
 .cat-card:focus-visible { outline: 3px solid var(--stone); outline-offset: 3px; }
+/* الهاتف: ظل أصغر أخف بالرسم وقت السكرول */
+@media (max-width: 760px) {
+  .cat-card { box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2); }
+}
 .cat-icon {
   position: absolute;
   top: 20px;
@@ -457,6 +528,11 @@ html.wheel-open { overflow: hidden; }
   color: var(--sw-fg);
   background: var(--sw-bg);
   box-shadow: 0 22px 48px -18px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+/* الهاتف: ظل أخف، والمسرح بيتلاشى بس بدون تكبير وقت الفتح */
+@media (max-width: 640px) {
+  .wheel-card-face { box-shadow: 0 10px 24px -12px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.06); }
+  .wheel-stage { transform: none; transition: none; }
 }
 .wheel-card-icon {
   position: absolute;
