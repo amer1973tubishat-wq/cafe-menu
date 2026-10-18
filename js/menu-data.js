@@ -1,6 +1,13 @@
 // المنيو كاملاً — عدّل الأصناف والأسعار من هنا فقط.
 // The full menu — edit items and prices here only.
 // price: بالدينار الأردني (JOD)
+//
+// لكل صنف:
+//   ar / en           الاسم
+//   descAr / descEn   وصف قصير (سطر)، بيطلع على العجلة
+//   longAr / longEn   (اختياري) وصف كامل بأي طول، بيطلع بنافذة التفاصيل لما تكبس على الصنف
+//   tagsAr / tagsEn   (اختياري) كلمات قصيرة مثل «سخن» أو «بيكفي شخصين»
+//   image             (اختياري) صورة، مثل "assets/menu/knafeh.webp" (جهّزها بـ tools/add-menu-images.py)
 
 window.MENU = [
   {
@@ -26,7 +33,10 @@ window.MENU = [
       { ar: "إسبريسو", en: "Espresso", descAr: "شوت مزدوج، نكهة شوكولاتة وكرز.", descEn: "Double shot, notes of chocolate and cherry.", price: 2.0 },
       { ar: "كورتادو", en: "Cortado", descAr: "إسبريسو مع حليب مبخّر بنفس الكمية.", descEn: "Espresso cut with an equal measure of steamed milk.", price: 2.5 },
       { ar: "فلات وايت", en: "Flat white", descAr: "حليب ناعم وطبقة رغوة رقيقة.", descEn: "Silky milk with a thin layer of microfoam.", price: 2.75 },
-      { ar: "لاتيه بالهيل", en: "Cardamom latte", descAr: "لاتيه بلمسة هيل وعسل جبلي من عجلون.", descEn: "Latte with cardamom and Ajloun mountain honey.", price: 3.25 },
+      { ar: "لاتيه بالهيل", en: "Cardamom latte", descAr: "لاتيه بلمسة هيل وعسل جبلي من عجلون.", descEn: "Latte with cardamom and Ajloun mountain honey.", price: 3.25,
+        longAr: "إسبريسو مزدوج من حبوب إثيوبية، مع حليب مبخّر على هيل مطحون طازة، ومحلّى بعسل جبلي من مناحل محمية غابات عجلون. بنطحن الهيل مع كل كوب عشان تضل ريحته قوية. بنقدر نعمله بحليب الشوفان أو اللوز بدون زيادة بالسعر.",
+        longEn: "A double shot of Ethiopian beans with milk steamed over freshly ground cardamom, sweetened with mountain honey from hives in the Ajloun Forest Reserve. We grind the cardamom for every cup so the aroma stays strong. Oat or almond milk at no extra cost.",
+        tagsAr: ["سخن", "بالعسل"], tagsEn: ["Hot", "With honey"] },
       { ar: "V60", en: "V60 pour-over", descAr: "تقطير يدوي، اسأل عن حبوب اليوم.", descEn: "Hand-poured — ask about today's beans.", price: 3.5 },
     ],
   },
@@ -67,7 +77,10 @@ window.MENU = [
       { ar: "منقوشة زعتر", en: "Za'atar manakish", descAr: "زعتر عجلوني وزيت زيتون بكر.", descEn: "Ajloun za'atar and extra-virgin olive oil.", price: 1.5 },
       { ar: "منقوشة جبنة", en: "Cheese manakish", descAr: "جبنة بيضاء بلدية وحبة البركة.", descEn: "White village cheese with nigella seeds.", price: 2.0 },
       { ar: "مسخن رول", en: "Musakhan roll", descAr: "دجاج بالسماق والبصل على خبز الطابون.", descEn: "Sumac chicken and onions in taboon bread.", price: 3.5 },
-      { ar: "صحن فطور الجبل", en: "Mountain breakfast plate", descAr: "لبنة، زيتون، بيض بلدي، زيت وزعتر، خبز طابون.", descEn: "Labneh, olives, village eggs, oil & za'atar, taboon bread.", price: 6.5 },
+      { ar: "صحن فطور الجبل", en: "Mountain breakfast plate", descAr: "لبنة، زيتون، بيض بلدي، زيت وزعتر، خبز طابون.", descEn: "Labneh, olives, village eggs, oil & za'atar, taboon bread.", price: 6.5,
+        longAr: "فطور عجلوني كامل على صينية وحدة: لبنة بلدية مع زيت زيتون من معاصر عجلون، زيتون أخضر وأسود، بيضتين بلدي مقليات أو مسلوقات حسب طلبك، صحن زيت وزعتر، بندورة وخيار من الحقل، وخبز طابون سخن من الفرن. بيكفي شخص جوعان أو شخصين لطاف، وبيجي معه إبريق شاي صغير بالميرمية.",
+        longEn: "A full Ajloun breakfast on one tray: village labneh under olive oil from Ajloun presses, green and black olives, two village eggs fried or boiled as you like, oil and za'atar, tomatoes and cucumbers from the field, and hot taboon bread from the oven. Feeds one hungry person or two light eaters, and comes with a small pot of sage tea.",
+        tagsAr: ["بيكفي شخصين", "حتى ١٢ الظهر"], tagsEn: ["Serves two", "Until noon"] },
     ],
   },
   {
@@ -77,7 +90,10 @@ window.MENU = [
     noteAr: "تتحضّر كل صباح.",
     noteEn: "Made fresh every morning.",
     items: [
-      { ar: "كنافة ناعمة", en: "Knafeh", descAr: "كنافة نابلسية بالجبنة، تُقدَّم سخنة.", descEn: "Nabulsi cheese knafeh, served warm.", price: 3.0 },
+      { ar: "كنافة ناعمة", en: "Knafeh", descAr: "كنافة نابلسية بالجبنة، تُقدَّم سخنة.", descEn: "Nabulsi cheese knafeh, served warm.", price: 3.0,
+        longAr: "كنافة ناعمة على الطريقة النابلسية: طبقة سميد مقرمشة بالسمنة البلدية فوق جبنة نابلسية محلّاة، بتطلع من الفرن على الطلب وبتنرش بالفستق الحلبي. القطر بيجي على جنب عشان تحطه على ذوقك. أطيب إشي مع فنجان قهوة سادة.",
+        longEn: "Fine Nabulsi-style knafeh: crisp semolina in local ghee over sweetened Nabulsi cheese, baked to order and finished with pistachio. The syrup comes on the side so you can pour to taste. Best with a cup of sada coffee.",
+        tagsAr: ["سخن", "على الطلب"], tagsEn: ["Warm", "Baked to order"] },
       { ar: "هريسة باللوز", en: "Almond harissa", descAr: "سميد وقطر ولوز محمّص.", descEn: "Semolina cake with syrup and toasted almonds.", price: 2.0 },
       { ar: "معمول تمر", en: "Date ma'amoul", descAr: "ثلاث حبات مع فنجان قهوة سادة.", descEn: "Three pieces with a cup of sada.", price: 2.5 },
       { ar: "تشيز كيك بالتين", en: "Fig cheesecake", descAr: "تين عجلوني مكرمل فوق تشيز كيك.", descEn: "Caramelised Ajloun figs on cheesecake.", price: 3.75 },

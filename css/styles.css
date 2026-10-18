@@ -692,6 +692,207 @@ html.wheel-open { overflow: hidden; }
 }
 .wheel-close:focus-visible { outline: 3px solid var(--stone); outline-offset: 3px; }
 
+/* زر التفاصيل تحت وصف الصنف */
+.wheel-more {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: 14px;
+  padding: 0 20px;
+  border: 1px solid rgba(200, 180, 143, 0.55);
+  border-radius: 999px;
+  color: var(--ivory);
+  background: rgba(242, 236, 224, 0.06);
+  font: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: background-color 200ms;
+}
+.wheel-more:hover { background: rgba(242, 236, 224, 0.14); }
+.wheel-more:focus-visible { outline: 2px solid var(--stone); outline-offset: 3px; }
+.wheel-front-desc {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
+}
+
+/* بطاقة فيها صورة: تدرّج غامق تحت عشان الاسم والسعر يضلوا مقروءين */
+.wheel-card.has-image .wheel-card-face::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(10, 22, 19, 0.82) 0%, rgba(10, 22, 19, 0.15) 50%, rgba(10, 22, 19, 0) 70%);
+}
+.wheel-card.has-image .wheel-card-name,
+.wheel-card.has-image .wheel-card-price { z-index: 1; }
+.wheel-card.has-image .wheel-card-name { color: #f2ece0; }
+.wheel-card-face.is-tapped { animation: tap-bump 360ms var(--ease-out); }
+@keyframes tap-bump {
+  40% { transform: scale(1.04); }
+}
+
+/* ---------- تفاصيل الصنف ---------- */
+.item-sheet {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+}
+.item-sheet[hidden] { display: none; }
+.sheet-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 18, 15, 0.55);
+  opacity: 0;
+  transition: opacity 280ms var(--ease-out);
+}
+.item-sheet.is-open .sheet-scrim { opacity: 1; }
+
+.sheet-panel {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  inset-inline-start: 0;
+  width: min(480px, 42vw);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  color: var(--ivory);
+  background: var(--oak-raised);
+  box-shadow: 0 0 60px rgba(0, 0, 0, 0.45);
+  outline: none;
+  transform: translate3d(-104%, 0, 0);
+  transition: transform 380ms var(--ease-out);
+}
+[dir="rtl"] .sheet-panel { transform: translate3d(104%, 0, 0); }
+.item-sheet.is-open .sheet-panel { transform: none; }
+.sheet-panel.is-dragging { transition: none; }
+.sheet-grip { display: none; }
+
+.sheet-close {
+  position: absolute;
+  top: 14px;
+  inset-inline-end: 14px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--oak-deep);
+  background: var(--ivory);
+  cursor: pointer;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.3);
+}
+.sheet-close svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
+.sheet-close:focus-visible { outline: 3px solid var(--stone); outline-offset: 3px; }
+
+.sheet-media {
+  position: relative;
+  aspect-ratio: 1.45;
+  max-width: 100%;
+  overflow: hidden;
+  background: var(--sw-bg, var(--oak));
+}
+.sheet-media img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.sheet-media svg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 28%;
+  height: 52%;
+  transform: translate(-50%, -50%);
+  fill: none;
+  stroke: var(--sw-line, var(--stone));
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sheet-body { padding: 24px 24px calc(32px + env(safe-area-inset-bottom, 0px)); }
+.sheet-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+.sheet-name {
+  margin: 0;
+  min-width: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  font-weight: 600;
+  line-height: 1.15;
+}
+.sheet-price {
+  margin: 0;
+  color: var(--stone);
+  font-size: 1.25rem;
+  font-weight: 600;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.sheet-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.sheet-tags[hidden] { display: none; }
+.sheet-tags li {
+  padding: 4px 12px;
+  border-radius: 999px;
+  color: var(--oak-deep);
+  background: var(--stone);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+.sheet-desc {
+  max-width: 60ch;
+  margin: 18px 0 0;
+  color: var(--ivory-muted);
+  font-size: 1.05rem;
+  line-height: 1.8;
+  white-space: pre-line;
+}
+
+@media (max-width: 640px) {
+  .wheel-front-desc { -webkit-line-clamp: 2; }
+  .wheel-more { margin-top: 10px; }
+  /* على الهاتف: لوح من تحت، والنص بيتسكرول جوّاه */
+  .sheet-panel {
+    top: auto;
+    inset-inline: 0;
+    width: auto;
+    max-height: 85svh;
+    border-radius: 24px 24px 0 0;
+    transform: translate3d(0, 104%, 0);
+  }
+  [dir="rtl"] .sheet-panel { transform: translate3d(0, 104%, 0); }
+  .item-sheet.is-open .sheet-panel { transform: none; }
+  .sheet-grip {
+    display: block;
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    z-index: 2;
+    width: 44px;
+    height: 5px;
+    border-radius: 999px;
+    background: rgba(242, 236, 224, 0.6);
+    transform: translateX(-50%);
+  }
+  .sheet-body { padding: 20px 20px calc(28px + env(safe-area-inset-bottom, 0px)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet-panel, .sheet-scrim { transition: none; }
+}
+
 @media (max-width: 640px) {
   .wheel-index { display: none; }
   .wheel-front {

@@ -19,6 +19,14 @@
   const indexEl = overlay.querySelector("#wheelIndex");
   const countEl = overlay.querySelector("#wheelCount");
   const closeBtn = overlay.querySelector("#wheelClose");
+  const moreBtn = overlay.querySelector("#wheelMore");
+  const sheet = overlay.querySelector("#itemSheet");
+  const sheetPanel = sheet.querySelector("#sheetPanel");
+  const sheetMedia = sheet.querySelector("#sheetMedia");
+  const sheetName = sheet.querySelector("#sheetName");
+  const sheetPrice = sheet.querySelector("#sheetPrice");
+  const sheetTags = sheet.querySelector("#sheetTags");
+  const sheetDesc = sheet.querySelector("#sheetDesc");
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const narrow = window.matchMedia("(max-width: 640px)");
 
@@ -76,6 +84,10 @@
   let opener = null;
   let pushed = false;
   let moved = false;
+  let sheetOpen = false;
+  let sheetPushed = false;
+  let ignorePop = false;
+  let tap = null;
 
   const rtl = () => document.documentElement.dir === "rtl";
   const last = () => Math.max(items.length - 1, 0);
@@ -142,6 +154,7 @@
 
     labelEl.style.opacity = String(1 - m);
     front.style.opacity = String(m);
+    front.style.visibility = m < 0.05 ? "hidden" : "visible";
     countEl.style.opacity = String(m);
 
     const near = clamp(Math.round(pos), 0, last());
@@ -185,6 +198,67 @@
     indexBtns.forEach((b, j) => b.classList.toggle("is-active", j === i));
   }
 
+  // ---------- تفاصيل الصنف ----------
+  let sheetItem = -1;
+  function fillSheet(i) {
+    sheetItem = i;
+    const { formatPrice, getLang } = window.Rabad;
+    const item = items[i];
+    const ar = getLang() === "ar";
+    const sw = SWATCHES[i % SWATCHES.length];
+    sheetMedia.style.setProperty("--sw-bg", sw.bg);
+    sheetMedia.style.setProperty("--sw-line", sw.line);
+    sheetMedia.innerHTML = item.image
+      ? `<img src="${item.image}" alt="${ar ? item.ar : item.en}" decoding="async" draggable="false">`
+      : `<svg viewBox="0 0 48 56" aria-hidden="true">${window.RABAD_ICONS[category.id] || ""}</svg>`;
+    sheetName.textContent = ar ? item.ar : item.en;
+    sheetPrice.textContent = formatPrice(item.price);
+    const tags = (ar ? item.tagsAr : item.tagsEn) || [];
+    sheetTags.innerHTML = tags.map((tg) => `<li>${tg}</li>`).join("");
+    sheetTags.hidden = !tags.length;
+    sheetDesc.textContent = (ar ? item.longAr : item.longEn) || (ar ? item.descAr : item.descEn);
+  }
+
+  function openSheet(i) {
+    if (!category || sheetOpen) return;
+    fillSheet(i);
+    sheetPanel.scrollTop = 0;
+    sheetPanel.style.transform = "";
+    sheet.hidden = false;
+    sheetOpen = true;
+    requestAnimationFrame(() => sheet.classList.add("is-open"));
+    sheetPanel.focus({ preventScroll: true });
+    try {
+      history.pushState({ sheet: i }, "");
+      sheetPushed = true;
+    } catch (e) { /* history unavailable */ }
+  }
+
+  function closeSheet(fromPop) {
+    if (!sheetOpen) return;
+    sheetOpen = false;
+    sheet.classList.remove("is-open");
+    sheetPanel.style.transform = "";
+    if (sheetPushed && !fromPop) {
+      ignorePop = true;
+      try { history.back(); } catch (e) { ignorePop = false; }
+    }
+    sheetPushed = false;
+    const done = () => { if (!sheetOpen) sheet.hidden = true; };
+    if (reduceMotion.matches) done();
+    else setTimeout(done, 320);
+    stage.focus({ preventScroll: true });
+  }
+
+  // البطاقة اللي قدّام بتنبض لحظة لما تنكبس، تأكيد إنها انفتحت
+  function bump(i) {
+    const face = cards[i] && cards[i].firstElementChild;
+    if (!face || reduceMotion.matches) return;
+    face.classList.remove("is-tapped");
+    void face.offsetWidth;
+    face.classList.add("is-tapped");
+  }
+
   // ---------- البناء ----------
   function build() {
     const { formatPrice, getLang } = window.Rabad;
@@ -196,10 +270,10 @@
       const sw = SWATCHES[i % SWATCHES.length];
       const name = ar ? item.ar : item.en;
       const art = item.image
-        ? `<img class="wheel-card-img" src="${item.image}" alt="" draggable="false">`
+        ? `<img class="wheel-card-img" src="${item.image}" alt="" draggable="false" loading="lazy" decoding="async">`
         : `<svg class="wheel-card-icon" viewBox="0 0 48 56" aria-hidden="true">${icon}</svg>`;
       return `
-        <div class="wheel-card" id="wheel-item-${i}" role="option" aria-selected="false" aria-label="${name}"
+        <div class="wheel-card${item.image ? " has-image" : ""}" id="wheel-item-${i}" role="option" aria-selected="false" aria-label="${name}"
              style="--sw-bg:${sw.bg};--sw-fg:${sw.fg};--sw-line:${sw.line}">
           <span class="wheel-card-face">
             ${art}
@@ -250,6 +324,12 @@
   }
 
   function finishClose() {
+    if (sheetOpen) {
+      sheetOpen = false;
+      sheetPushed = false;
+      sheet.classList.remove("is-open");
+      sheet.hidden = true;
+    }
     clearTimeout(autoOpen);
     clearTimeout(settling);
     if (frame) cancelAnimationFrame(frame);
@@ -275,12 +355,24 @@
     // زر الرجوع بالجوال بيسكّر العجلة؛ والإغلاق من الزر برجّع السجل خطوة
     if (pushed) {
       pushed = false;
-      try { history.back(); } catch (e) { /* history unavailable */ }
+      // الرجوع بيوصل متأخر؛ ما بدنا يسكّر عجلة انفتحت بعدها مباشرة
+      ignorePop = true;
+      try { history.back(); } catch (e) { ignorePop = false; }
     }
     finishClose();
   }
 
   window.addEventListener("popstate", () => {
+    if (ignorePop) {
+      ignorePop = false;
+      return;
+    }
+    // زر الرجوع: بيسكّر التفاصيل أول، وبعدين العجلة
+    if (sheetOpen) {
+      sheetPushed = false;
+      closeSheet(true);
+      return;
+    }
     if (category) {
       pushed = false;
       finishClose();
@@ -299,6 +391,8 @@
   stage.addEventListener("pointerdown", (e) => {
     clearTimeout(autoOpen);
     drag = e.clientY;
+    const card = e.target.closest(".wheel-card");
+    tap = { x: e.clientX, y: e.clientY, card };
     stage.setPointerCapture(e.pointerId);
   });
   stage.addEventListener("pointermove", (e) => {
@@ -306,9 +400,24 @@
     to(target + (drag - e.clientY) / DRAG_UNITS);
     drag = e.clientY;
   });
-  const endDrag = () => {
+  const endDrag = (e) => {
     if (drag === null) return;
     drag = null;
+    // كبسة (حركة أقل من 6px) مش سحب: على البطاقة اللي قدّام بتفتح التفاصيل، وعلى جارتها بتجيبها لقدّام
+    const t0 = tap;
+    tap = null;
+    if (e && e.type === "pointerup" && t0 && t0.card && Math.hypot(e.clientX - t0.x, e.clientY - t0.y) < 6) {
+      const i = cards.indexOf(t0.card);
+      if (i >= 0) {
+        if (turn >= 0.9 && i === active) {
+          bump(i);
+          openSheet(i);
+        } else {
+          to(i + 1);
+        }
+        return;
+      }
+    }
     // نوقف على صنف، مش بين صنفين
     if (target > 1) to(Math.round(target));
   };
@@ -318,10 +427,17 @@
   overlay.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       e.preventDefault();
-      close();
+      if (sheetOpen) closeSheet();
+      else close();
       return;
     }
-    if (e.target.closest("#wheelIndex")) return;
+    if (sheetOpen || e.target.closest("#wheelIndex") || e.target.closest("button")) return;
+    if (e.key === "Enter" && turn >= 0.9) {
+      e.preventDefault();
+      bump(active);
+      openSheet(active);
+      return;
+    }
     if (e.key === "ArrowDown") to(Math.round(target) + 1);
     else if (e.key === "ArrowUp") to(Math.round(target) - 1);
     else return;
@@ -337,6 +453,61 @@
   });
 
   closeBtn.addEventListener("click", close);
+  moreBtn.addEventListener("click", () => {
+    if (active >= 0) openSheet(active);
+  });
+  sheet.querySelector("#sheetClose").addEventListener("click", () => closeSheet());
+  // بعد كبسة لمس المتصفح بيبعث click متأخر بيوقع على الخلفية اللي طلعت تحت الإصبع،
+  // فالخلفية بتسكّر بس إذا الكبسة نفسها بلّشت عليها
+  const scrim = sheet.querySelector("#sheetScrim");
+  let scrimDown = false;
+  scrim.addEventListener("pointerdown", () => { scrimDown = true; });
+  scrim.addEventListener("click", () => {
+    if (scrimDown) closeSheet();
+    scrimDown = false;
+  });
+
+  // سحب اللوح لتحت بيسكّره (بس لما النص مش متسكرل لتحت).
+  // على اللمس منستعمل touch events: المتصفح بيلغي pointer events أول ما يبلّش يسكرل.
+  let pull = null;
+  const startPull = (y, target) => {
+    if (sheetPanel.scrollTop > 0 || target.closest("button")) return;
+    pull = { y, dy: 0 };
+  };
+  const movePull = (y) => {
+    if (!pull) return false;
+    pull.dy = y - pull.y;
+    if (pull.dy <= 0) {
+      if (pull.dy < -6) pull = null; // سحب لفوق = سكرول عادي للنص
+      return false;
+    }
+    sheetPanel.classList.add("is-dragging");
+    sheetPanel.style.transform = `translate3d(0, ${pull.dy}px, 0)`;
+    return true;
+  };
+  const endPull = () => {
+    if (!pull) return;
+    const dy = pull.dy;
+    pull = null;
+    sheetPanel.classList.remove("is-dragging");
+    if (dy > 90) closeSheet();
+    else sheetPanel.style.transform = "";
+  };
+  sheetPanel.addEventListener("touchstart", (e) => startPull(e.touches[0].clientY, e.target), { passive: true });
+  sheetPanel.addEventListener("touchmove", (e) => {
+    if (movePull(e.touches[0].clientY) && e.cancelable) e.preventDefault();
+  }, { passive: false });
+  sheetPanel.addEventListener("touchend", endPull);
+  sheetPanel.addEventListener("touchcancel", endPull);
+  sheetPanel.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "mouse") startPull(e.clientY, e.target);
+  });
+  window.addEventListener("pointermove", (e) => {
+    if (e.pointerType === "mouse" && pull) movePull(e.clientY);
+  });
+  window.addEventListener("pointerup", (e) => {
+    if (e.pointerType === "mouse") endPull();
+  });
 
   new ResizeObserver(() => {
     if (!category) return;
@@ -350,6 +521,7 @@
     build();
     if (keep >= 0) setActive(keep);
     drawNow();
+    if (sheetOpen && sheetItem >= 0) fillSheet(sheetItem);
   });
 
   window.ItemWheel = { open, close };

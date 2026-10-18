@@ -144,10 +144,30 @@
       <h3 class="wheel-front-name"></h3>
       <p class="wheel-front-desc"></p>
       <p class="wheel-front-price"></p>
+      <button class="wheel-more" type="button" id="wheelMore" data-i18n="wheelMore">التفاصيل</button>
     </div>
     <ol class="wheel-index" id="wheelIndex"></ol>
     <p class="wheel-count" id="wheelCount" aria-hidden="true"></p>
     <p class="wheel-hint" data-i18n="wheelHint">اسحب أو مرّر لتشوف الأصناف</p>
+    <!-- تفاصيل الصنف: لوح من تحت على الهاتف، وعلى جنب بالكمبيوتر. النص الطويل بيتسكرول جوّاه -->
+    <div class="item-sheet" id="itemSheet" role="dialog" aria-modal="true" aria-labelledby="sheetName" hidden>
+      <div class="sheet-scrim" id="sheetScrim"></div>
+      <div class="sheet-panel" id="sheetPanel" tabindex="-1">
+        <div class="sheet-grip" aria-hidden="true"></div>
+        <button class="sheet-close" type="button" id="sheetClose" aria-label="سكّر" data-i18n-label="wheelClose">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+        </button>
+        <div class="sheet-media" id="sheetMedia"></div>
+        <div class="sheet-body">
+          <div class="sheet-head">
+            <h3 class="sheet-name" id="sheetName"></h3>
+            <p class="sheet-price" id="sheetPrice"></p>
+          </div>
+          <ul class="sheet-tags" id="sheetTags"></ul>
+          <p class="sheet-desc" id="sheetDesc"></p>
+        </div>
+      </div>
+    </div>
     <button class="wheel-close" type="button" id="wheelClose" aria-label="سكّر" data-i18n-label="wheelClose">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
     </button>
