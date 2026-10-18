@@ -9,9 +9,9 @@
   <meta name="theme-color" content="#17302A">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant:wght@500;600;700&family=Readex+Pro:wght@300;400;500;600&family=Reem+Kufi:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="preload" as="image" href="assets/layers/hill.webp" type="image/webp">
-  <link rel="preload" as="image" href="assets/layers/sky.webp" type="image/webp">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant:wght@600&family=Readex+Pro:wght@300;400;500;600&family=Reem+Kufi:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="preload" as="image" href="assets/layers/scene.webp" type="image/webp" media="(max-width: 760px)">
+  <link rel="preload" as="image" href="assets/layers/hill.webp" type="image/webp" media="(min-width: 761px)">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -39,14 +39,19 @@
       <div class="stage">
         <div class="world" id="world">
           <!-- كل طبقة div بحجم الشاشة بالضبط، والحركة تكبير وإزاحة وشفافية بس: أخف إشي على كرت الشاشة -->
+          <!-- الكمبيوتر: سما وتلة ونصّين تراس (عمق و parallax). الهاتف: طبقة وحدة للمشهد، أخف بكثير.
+               الطبقات المخفية بـ display:none ما بتنزل صورها أصلاً. -->
           <div class="scene-breathe">
-            <div class="bg bg-sky" data-layer="sky"></div>
+            <div class="bg bg-sky desk-only" data-layer="sky"></div>
+            <div class="bg bg-scene phone-only" data-layer="scene"></div>
             <h1 class="hero-title" id="heroTitle"><span data-i18n="heroTitle">عجلون</span></h1>
-            <div class="bg bg-hill" data-layer="hill"></div>
-            <div class="bg bg-left" data-layer="left"></div>
-            <div class="bg bg-right" data-layer="right"></div>
-            <div class="bg bg-blur" data-layer="blurFull"></div>
-            <div class="blur-mask"><div class="bg bg-blur" data-layer="blurMask"></div></div>
+            <div class="bg bg-hill desk-only" data-layer="hill"></div>
+            <div class="bg bg-left desk-only" data-layer="left"></div>
+            <div class="bg bg-right desk-only" data-layer="right"></div>
+            <div class="bg bg-blur desk-only" data-layer="blurFull"></div>
+            <div class="bg bg-blur-low desk-only" data-layer="blurLow"></div>
+            <div class="bg bg-sblur phone-only" data-layer="sblurFull"></div>
+            <div class="bg bg-sblur-low phone-only" data-layer="sblurLow"></div>
           </div>
           <div class="haze" aria-hidden="true"></div>
           <div class="shade" aria-hidden="true"></div>

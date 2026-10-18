@@ -1,7 +1,8 @@
 // قصة السكرول: مسرح ثابت (sticky)، والسكرول جوّاه بيحرّك طبقات الصورة.
 // كل طبقة div بحجم الشاشة، والحركة تكبير وإزاحة وشفافية بس (transform/opacity)،
-// فالمتصفح بيحرّكها على كرت الشاشة بدون ما يعيد رسم إشي: سريعة على الموبايل.
-// الغباش صورة مغبّشة جاهزة بتظهر بالتدريج، مش فلتر blur.
+// فالمتصفح بيحرّكها على كرت الشاشة بدون ما يعيد رسم إشي.
+// الكمبيوتر: سما وتلة ونصّين تراس. الهاتف: طبقة وحدة للمشهد (نص الحمل).
+// الغباش صور مغبّشة جاهزة بتظهر بالتدريج، مش فلتر blur ولا mask.
 (() => {
   const section = document.querySelector(".cinema");
   if (!section) return;
@@ -22,7 +23,6 @@
 
   const IMG_RATIO = 1408 / 768;
   const STORY = 1900; // التوقيتات تحت محسوبة على 1900px، وبتتمدد على طول القسم الفعلي
-  const SEAM = 620 / 1408;
 
   const clamp = (v, min = 0, max = 1) => Math.min(max, Math.max(min, v));
   const smoothstep = (e0, e1, v) => {
@@ -54,14 +54,14 @@
       el.style.backgroundSize = `${f.w}px ${f.h}px`;
       el.style.backgroundPosition = `${f.x}px ${f.y}px`;
     }
-    const phone = narrow.matches;
     const origin = (ox, oy) => `${(f.x + f.w * ox).toFixed(1)}px ${(f.y + f.h * oy).toFixed(1)}px`;
-    L.hill.style.transformOrigin = origin(0.33, 0.22);
-    L.blurFull.style.transformOrigin = origin(0.33, 0.22);
-    L.blurMask.style.transformOrigin = origin(0.33, 0.22);
-    // على الموبايل التكبير من الشق نفسه، عشان كل نص يطلع لبرّا مش لجوّا الشاشة
-    L.left.style.transformOrigin = origin(phone ? SEAM : 0.21, 0.7);
-    L.right.style.transformOrigin = origin(phone ? SEAM : 0.79, 0.7);
+    // الكاميرا بتقرّب على القلعة
+    for (const k of ["hill", "blurFull", "blurLow", "scene", "sblurFull", "sblurLow"]) {
+      L[k].style.transformOrigin = origin(0.33, 0.22);
+    }
+    L.left.style.transformOrigin = origin(0.21, 0.7);
+    L.right.style.transformOrigin = origin(0.79, 0.7);
+    last.clear();
   }
 
   // ---------- الحالة ----------
@@ -76,6 +76,12 @@
   const last = new Map();
 
   // نكتب بس لما القيمة تتغير، عشان ما نشغّل المتصفح عالفاضي
+  // طبقة شفافيتها صفر بتطلع من الرسم كلياً (visibility)، مش بس بتختفي
+  function fade(el, value) {
+    put(el, "opacity", value.toFixed(3));
+    put(el, "visibility", value < 0.004 ? "hidden" : "visible");
+  }
+
   function put(el, prop, value) {
     const key = el;
     let m = last.get(key);
@@ -111,32 +117,40 @@
     // بعد القلعة بيضل المشهد مغبّش لآخر القصة، انتقال ناعم لقسم المنيو
     const progress = clamp(s / 1600);
 
-    const open = Math.pow(castle.enter, 1.5);
     const zoom = 1.02 + progress * 0.04 + castle.enter * 0.55;
     const sharedY = progress * -40;
-    const splitVw = phone ? 85 : 46;
-
-    // ---------- الطبقات ----------
-    put(L.sky, "transform", `scale(${(1.02 + progress * 0.06).toFixed(4)})`);
-    const hillT = tf(mouseX * -12, mouseY * -6 + sharedY * 0.5, zoom);
-    put(L.hill, "transform", hillT);
-    const splitScale = 1.02 + progress * 0.08 + open * 0.6;
-    const splitY = mouseY * 10 + sharedY - open * 140;
-    // النصّين بيختفوا وهم بيبعدوا، فما بيضل مستطيل بالنص
-    const splitAlpha = (1 - smoothstep(0.25, 0.9, open)).toFixed(3);
-    put(L.left, "transform", tf((-open * splitVw * W) / 100 + mouseX * 22, splitY, splitScale));
-    put(L.right, "transform", tf((open * splitVw * W) / 100 + mouseX * 22, splitY, splitScale));
-    put(L.left, "opacity", splitAlpha);
-    put(L.right, "opacity", splitAlpha);
-
-    // الغباش: كامل وقت الانتقال، وبس تحت لما الكاميرا توصل القلعة، ورجع كامل للبطاقات
+    // الغباش: كامل وقت الانتقال، وبس تحت لما الكاميرا توصل القلعة، ورجع كامل بعدها
     const blur = smoothstep(0, 0.25, castle.enter);
     const settle = smoothstep(0.65, 1, castle.enter) * (1 - castle.exit);
-    put(L.blurFull, "transform", hillT);
-    put(L.blurMask, "transform", hillT);
-    put(L.blurFull, "opacity", (blur * (1 - settle)).toFixed(3));
-    put(L.blurMask, "opacity", (blur * settle).toFixed(3));
-    put(haze, "opacity", (castle.active * 0.85 + castle.exit * 0.9).toFixed(3));
+
+    // ---------- الطبقات ----------
+    if (phone) {
+      // طبقة وحدة: الكاميرا بتقرّب على القلعة، والغباش الجاهز بيظهر فوقها
+      const sceneT = tf(0, sharedY * 0.5, zoom);
+      put(L.scene, "transform", sceneT);
+      put(L.sblurFull, "transform", sceneT);
+      put(L.sblurLow, "transform", sceneT);
+      fade(L.sblurFull, blur * (1 - settle));
+      fade(L.sblurLow, blur * settle);
+    } else {
+      const open = Math.pow(castle.enter, 1.5);
+      put(L.sky, "transform", `scale(${(1.02 + progress * 0.06).toFixed(4)})`);
+      const hillT = tf(mouseX * -12, mouseY * -6 + sharedY * 0.5, zoom);
+      put(L.hill, "transform", hillT);
+      const splitScale = 1.02 + progress * 0.08 + open * 0.6;
+      const splitY = mouseY * 10 + sharedY - open * 140;
+      // النصّين بيختفوا وهم بيبعدوا، فما بيضل مستطيل بالنص
+      const splitAlpha = 1 - smoothstep(0.25, 0.9, open);
+      put(L.left, "transform", tf(-open * 0.46 * W + mouseX * 22, splitY, splitScale));
+      put(L.right, "transform", tf(open * 0.46 * W + mouseX * 22, splitY, splitScale));
+      fade(L.left, splitAlpha);
+      fade(L.right, splitAlpha);
+      put(L.blurFull, "transform", hillT);
+      put(L.blurLow, "transform", hillT);
+      fade(L.blurFull, blur * (1 - settle));
+      fade(L.blurLow, blur * settle);
+    }
+    fade(haze, castle.active * 0.85 + castle.exit * 0.9);
 
     // ---------- النصوص ----------
     put(title, "transform", `translate3d(0, ${(introExit * -210).toFixed(1)}px, 0) scale(${(1 - introExit * 0.08).toFixed(4)})`);
@@ -161,12 +175,27 @@
     requestAnimationFrame(update);
   }
 
-  window.addEventListener("scroll", requestTick, { passive: true });
+  // لما القصة برّا الشاشة: ما في حساب، والطبقات بتطلع من ذاكرة كرت الشاشة، والتنفّس بيوقف
+  let onScreen = true;
+  new IntersectionObserver(([entry]) => {
+    onScreen = entry.isIntersecting;
+    stage.classList.toggle("is-active", onScreen);
+    stage.classList.toggle("is-offscreen", !onScreen);
+    if (onScreen) requestTick();
+  }, { rootMargin: "300px 0px" }).observe(section);
+
+  window.addEventListener("scroll", () => {
+    if (onScreen) requestTick();
+  }, { passive: true });
   let resizeTimer = 0;
+  let layoutPhone = narrow.matches;
   window.addEventListener("resize", () => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
+      const wasPhone = layoutPhone;
       layout();
+      layoutPhone = narrow.matches;
+      if (wasPhone !== layoutPhone) last.clear();
       requestTick();
     }, 120);
   });
@@ -180,6 +209,7 @@
     },
     { passive: true }
   );
+  stage.classList.add("is-active");
   layout();
   requestTick();
 })();

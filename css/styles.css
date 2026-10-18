@@ -85,10 +85,9 @@ a { color: inherit; }
   padding-inline: clamp(1rem, 4vw, 3rem);
   transition: background-color 300ms var(--ease-out), box-shadow 300ms var(--ease-out);
 }
+/* خلفية صلبة بدل backdrop-filter: التغبيش ورا هيدر ثابت بينعاد مع كل بكسل سكرول وبيقطّع على الجوال */
 .site-header.is-scrolled {
-  background: rgba(16, 35, 30, 0.88);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(16, 35, 30, 0.95);
   box-shadow: 0 1px 0 var(--line);
 }
 
@@ -211,22 +210,27 @@ a { color: inherit; }
 .bg-hill { z-index: 2; background-image: url("../assets/layers/hill.webp"); }
 .bg-left { z-index: 3; background-image: url("../assets/layers/terrace-left.webp"); }
 .bg-right { z-index: 3; background-image: url("../assets/layers/terrace-right.webp"); }
-.bg-blur { z-index: 4; background-image: url("../assets/layers/hill-blur.webp"); opacity: 0; }
-.blur-mask {
-  position: absolute;
-  inset: 0;
-  z-index: 4;
-  pointer-events: none;
-  -webkit-mask-image: linear-gradient(to bottom, transparent 24%, #000 52%);
-  mask-image: linear-gradient(to bottom, transparent 24%, #000 52%);
-}
+.bg-blur { z-index: 4; background-image: url("../assets/layers/hill-blur.webp"); opacity: 0; visibility: hidden; }
+/* نفس الغباش بس تحت، والتدرّج محروق بالصورة (أرخص بكثير من mask-image) */
+.bg-blur-low { z-index: 4; background-image: url("../assets/layers/hill-blur-low.webp"); opacity: 0; visibility: hidden; }
+
+/* الهاتف: طبقة وحدة للمشهد كامل، ونسختين مغبّشات جاهزات */
+.bg-scene { z-index: 2; background-image: url("../assets/layers/scene.webp"); }
+.bg-sblur { z-index: 4; background-image: url("../assets/layers/scene-blur.webp"); opacity: 0; visibility: hidden; }
+.bg-sblur-low { z-index: 4; background-image: url("../assets/layers/scene-blur-low.webp"); opacity: 0; visibility: hidden; }
+
 @media (max-width: 760px) {
-  .blur-mask {
-    -webkit-mask-image: linear-gradient(to bottom, transparent 20%, #000 46%);
-    mask-image: linear-gradient(to bottom, transparent 20%, #000 46%);
-  }
+  .desk-only { display: none; }
+  .scene-breathe { animation: none; }
 }
-.js .bg-hill, .js .bg-left, .js .bg-right, .js .bg-blur { will-change: transform, opacity; }
+@media (min-width: 761px) {
+  .phone-only { display: none; }
+}
+
+/* كرت الشاشة بيحجز الطبقات بس وقت القصة على الشاشة */
+.stage.is-active .bg { will-change: transform, opacity; }
+/* برّا الشاشة: محتوى المسرح بيطلع من الرسم وذاكرة كرت الشاشة كلياً */
+.stage.is-offscreen > * { display: none; }
 
 .haze {
   position: absolute;
@@ -253,7 +257,6 @@ a { color: inherit; }
   text-align: center;
   transform: translate3d(0, var(--title-y), 0) scale(var(--title-scale));
   opacity: var(--title-opacity);
-  will-change: transform, opacity;
   pointer-events: none;
 }
 .hero-title span { display: inline-block; }
@@ -286,7 +289,6 @@ a { color: inherit; }
   text-align: center;
   transform: translate3d(-50%, var(--intro-y), 0);
   opacity: var(--intro-opacity);
-  will-change: transform, opacity;
 }
 .intro-copy p {
   margin: 0 auto;
@@ -323,7 +325,6 @@ a { color: inherit; }
   width: min(760px, calc(100% - 40px));
   text-align: center;
   pointer-events: none;
-  will-change: transform, opacity;
 }
 .story-panel h2 {
   margin: 0;
@@ -383,8 +384,11 @@ a { color: inherit; }
     top: 26vh;
     color: var(--ivory);
     font-size: clamp(4.5rem, 24vw, 7rem);
-    text-shadow: 0 6px 40px rgba(10, 22, 19, 0.55);
+    text-shadow: 0 3px 14px rgba(10, 22, 19, 0.6);
   }
+  /* ظلال أصغر على الهاتف: الظل الكبير على نص بيتحرك بينعاد رسمه كل إطار */
+  .intro-copy p, .story-panel p, .facts dd { text-shadow: 0 1px 8px rgba(0, 0, 0, 0.55); }
+  .story-panel h2, .facts dt { text-shadow: 0 3px 12px rgba(0, 0, 0, 0.4); }
   .intro-copy { bottom: 36px; }
   .intro-copy p, .story-panel p { font-size: 1rem; }
   .hero-tags { gap: 8px; }

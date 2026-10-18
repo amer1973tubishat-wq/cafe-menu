@@ -111,4 +111,45 @@ for name, poly in (('terrace-left', left_poly), ('terrace-right', right_poly)):
     layer = im.copy(); layer.putalpha(Image.fromarray(sa))
     layer.save(f'{out}/{name}.webp', quality=84, method=6)
 
+
+def blurred_rgba(img, radius):
+    # تغبيش بنص الحجم مع premultiplied alpha عشان الحواف الشفافة ما تسودّ
+    half = img.convert('RGBA').resize((W // 2, H // 2), Image.LANCZOS)
+    arr = np.asarray(half).astype(np.float64)
+    al = arr[..., 3:4] / 255.0
+    pre = np.concatenate([arr[..., :3] * al, al], -1)
+    pb = np.stack([blur(pre[..., c], radius) for c in range(4)], -1)
+    rgb = pb[..., :3] / np.maximum(pb[..., 3:4], 1e-4)
+    return np.concatenate([np.clip(rgb, 0, 255), np.clip(pb[..., 3:4] * 255, 0, 255)], -1)
+
+
+def save_rgba(arr, name):
+    Image.fromarray(arr.astype(np.uint8), 'RGBA').save(f'{out}/{name}.webp', quality=80, method=6)
+
+
+def fade_top(arr, start, end):
+    # الغباش بس تحت: شفاف فوق خط start، وكامل تحت end (نسبة من ارتفاع الصورة).
+    # بدل mask-image بالمتصفح، اللي بينعاد رسمه كل إطار على الجوال
+    h = arr.shape[0]
+    y = np.linspace(0, 1, h)[:, None]
+    ramp = np.clip((y - start) / (end - start), 0, 1)
+    ramp = ramp * ramp * (3 - 2 * ramp)
+    out_arr = arr.copy()
+    out_arr[..., 3] = arr[..., 3] * ramp
+    return out_arr
+
+
+# التلة مغبّشة (الكمبيوتر): كاملة وقت الانتقال، والنسخة low للمرحلة اللي القلعة فيها واضحة
+hill_blur = blurred_rgba(hill, 9)
+save_rgba(hill_blur, 'hill-blur')
+# التدرّج بإحداثيات الصورة. الكاميرا بتكبّر 1.57× حوالين القلعة (22% من فوق)، فهاي الأرقام
+# بتوصل على الشاشة تقريباً 24%→52% (الكمبيوتر) و 20%→46% (الهاتف)، مكان الكلام بالظبط
+save_rgba(fade_top(hill_blur, 0.23, 0.41), 'hill-blur-low')
+
+# الهاتف: طبقة وحدة للمشهد كامل بدل ٤ طبقات، ونسختين مغبّشات
+im.save(f'{out}/scene.webp', quality=80, method=6)
+scene_blur = blurred_rgba(im, 9)
+save_rgba(scene_blur, 'scene-blur')
+save_rgba(fade_top(scene_blur, 0.21, 0.37), 'scene-blur-low')
+
 print('ok')

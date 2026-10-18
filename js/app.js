@@ -85,11 +85,29 @@
   const header = $(".site-header");
   // الهيدر بيضل شفاف فوق القصة، وبيصير صلب لما تخلص
   const story = $(".cinema");
-  const onScroll = () => {
-    const end = story ? story.getBoundingClientRect().bottom - header.offsetHeight : -1;
-    header.classList.toggle("is-scrolled", end <= 0);
+  // نهاية القصة بتنحسب مرة وحدة (وعند تغيير الحجم)، والسكرول بيقارن رقم بس: ما في قراءة layout مع كل حركة
+  let storyEnd = 0;
+  let headerTick = false;
+  const measureStory = () => {
+    storyEnd = story ? story.offsetTop + story.offsetHeight - header.offsetHeight : 0;
   };
-  window.addEventListener("scroll", onScroll, { passive: true });
+  const onScroll = () => {
+    headerTick = false;
+    const solid = window.scrollY >= storyEnd;
+    if (solid !== header.classList.contains("is-scrolled")) header.classList.toggle("is-scrolled", solid);
+  };
+  window.addEventListener("scroll", () => {
+    if (headerTick) return;
+    headerTick = true;
+    requestAnimationFrame(onScroll);
+  }, { passive: true });
+  for (const ev of ["resize", "load"]) {
+    window.addEventListener(ev, () => {
+      measureStory();
+      onScroll();
+    });
+  }
+  measureStory();
   onScroll();
 
   $("#langToggle").addEventListener("click", () => {
@@ -119,7 +137,8 @@
     const title = $(".hero-title span");
     gsap.timeline({ defaults: { ease: "power3.out" } })
       .fromTo(".dusk", { opacity: 1 }, { opacity: 0, duration: 2.2, ease: "power2.inOut" }, 0)
-      .fromTo("#world", { scale: 1.14 }, { scale: 1, duration: 3, ease: "power2.out" }, 0)
+      // على الهاتف بدون تكبير المشهد كله: التلاشي لحاله كفاية وأخف
+      .fromTo("#world", { scale: window.matchMedia("(max-width: 760px)").matches ? 1 : 1.14 }, { scale: 1, duration: 3, ease: "power2.out", clearProps: "transform" }, 0)
       .from(title, { opacity: 0, yPercent: 40, duration: 1.4 }, 0.7)
       .from(".site-header > *", { opacity: 0, y: -12, duration: 0.7, stagger: 0.08 }, 1.2)
       .from(".intro-copy > *", { opacity: 0, y: 24, duration: 0.9, stagger: 0.15 }, 1.4);
@@ -131,6 +150,7 @@
         y: 28,
         duration: 0.9,
         ease: "power3.out",
+        clearProps: "opacity,transform",
         scrollTrigger: { trigger: el, start: "top 88%", once: true },
       });
     });
