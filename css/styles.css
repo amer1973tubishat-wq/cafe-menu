@@ -157,20 +157,17 @@ a { color: inherit; }
 
 /* ---------- Story (cinematic scroll) ---------- */
 /* مسرح ثابت بطول الشاشة، والقسم حوله أطول: السكرول جوّاه بيحرّك المشهد بدل ما يحرّك الصفحة.
-   الصورة مقسومة لطبقات وبتنرسم على canvas (js/cinema.js). القيم اللي بتحرّك النصوص بتنكتب
-   كمتغيرات CSS على .stage بس، مش على الصفحة كلها. */
+   الصورة مقسومة لطبقات بحجم الشاشة، و js/cinema.js بيحرّكها (تكبير وإزاحة وشفافية بس). */
 .stage {
   --title-y: 0px; --title-scale: 1; --title-opacity: 1;
   --intro-y: 0px; --intro-opacity: 1;
   --panel-castle-opacity: 0; --panel-castle-y: 58px;
-  --cards-x: 120vw; --cards-title-opacity: 0; --controls-opacity: 0;
-  --gutter: max(16px, 6vw);
 }
 
 .cinema { position: relative; height: 100svh; }
-.js .cinema { height: calc(100svh + 2600px); }
+.js .cinema { height: calc(100svh + 1900px); }
 @media (max-width: 760px) {
-  .js .cinema { height: calc(100svh + 2000px); }
+  .js .cinema { height: calc(100svh + 1500px); }
 }
 
 .stage {
@@ -377,147 +374,6 @@ a { color: inherit; }
   text-shadow: 0 2px 18px rgba(0, 0, 0, 0.5);
 }
 
-/* ---------- Menu section cards ---------- */
-.sights {
-  position: absolute;
-  z-index: 8;
-  left: 0;
-  right: 0;
-  top: calc(var(--header-h) + clamp(16px, 9vh, 110px));
-  visibility: hidden;
-}
-.sights.is-visible { visibility: visible; }
-
-.sights-title {
-  margin: 0 0 22px;
-  padding-inline: var(--gutter);
-  color: var(--ivory);
-  font-family: var(--font-display);
-  font-size: clamp(1.8rem, 3.6vw, 3rem);
-  font-weight: 600;
-  line-height: 1.2;
-  opacity: var(--cards-title-opacity);
-  text-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-}
-
-.sights { --dir-sign: 1; }
-[dir="rtl"] .sights { --dir-sign: -1; }
-
-.sights-viewport {
-  transform: translate3d(calc(var(--cards-x) * var(--dir-sign)), 0, 0);
-  will-change: transform;
-}
-
-.sights-track {
-  --shift: 0px;
-  display: flex;
-  gap: clamp(14px, 1.2vw, 22px);
-  align-items: stretch;
-  padding-block: 6px 24px;
-  /* بالعربي الترتيب من اليمين، فنفس الإزاحة بالعكس */
-  transform: translate3d(calc((var(--shift) + var(--gutter)) * var(--dir-sign)), 0, 0);
-  transition: transform 640ms cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: transform;
-}
-.sights-track.is-jumping { transition: none; }
-
-.sight-card {
-  position: relative;
-  flex: 0 0 clamp(270px, 24vw, 350px);
-  height: 230px;
-  padding: 24px;
-  overflow: hidden;
-  border-radius: 24px;
-  color: var(--oak-deep);
-  background: var(--ivory);
-  box-shadow: 0 18px 52px rgba(0, 0, 0, 0.22);
-  cursor: pointer;
-  user-select: none;
-  transition: transform 300ms var(--ease-out), box-shadow 300ms var(--ease-out);
-}
-.sight-card:hover { transform: translateY(-4px); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3); }
-.sight-card:focus-visible { outline: 3px solid var(--stone); outline-offset: 3px; }
-
-.sight-kicker {
-  display: block;
-  color: var(--olive);
-  font-size: 0.85rem;
-  font-weight: 500;
-  line-height: 1.2;
-}
-.sight-pin {
-  position: absolute;
-  top: 20px;
-  inset-inline-end: 22px;
-  width: 56px;
-  height: 64px;
-  fill: none;
-  stroke: var(--pomegranate);
-  stroke-width: 2.2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.sight-card h3 {
-  position: absolute;
-  inset-inline: 24px;
-  bottom: calc(24px + 1.5em * 2 + 8px);
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: 1.6rem;
-  font-weight: 600;
-  line-height: 1.15;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.sight-card p {
-  position: absolute;
-  inset-inline: 24px;
-  bottom: 24px;
-  margin: 0;
-  color: #3d4a44;
-  font-size: 0.95rem;
-  line-height: 1.5;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
-}
-
-.sights-controls {
-  display: flex;
-  gap: 14px;
-  padding-inline: var(--gutter);
-  opacity: var(--controls-opacity);
-  pointer-events: none;
-}
-[dir="rtl"] .sight-nav svg { transform: scaleX(-1); }
-.sights.is-ready .sights-controls { pointer-events: auto; }
-.sight-nav {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 54px;
-  height: 54px;
-  border: 0;
-  border-radius: 999px;
-  color: var(--oak-deep);
-  background: var(--ivory);
-  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.25);
-  cursor: pointer;
-  transition: transform 200ms var(--ease-out);
-}
-.sight-nav:active { transform: scale(0.94); }
-.sight-nav svg {
-  width: 22px;
-  height: 22px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2.4;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
 @media (max-width: 640px) {
   /* على الموبايل ما في سما كفاية ورا القلعة، فالاسم بيطلع قدّام فوق التلة */
   .hero-title {
@@ -534,11 +390,9 @@ a { color: inherit; }
   .hero-tags { gap: 8px; }
   .hero-tags span { min-height: 38px; padding: 0 14px; font-size: 0.88rem; }
   .story-panel-castle { top: 56%; }
-  .sight-card { flex-basis: min(78vw, 300px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sights-track, .sight-card { transition: none; }
   .scene-breathe { animation: none; }
 }
 

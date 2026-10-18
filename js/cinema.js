@@ -10,10 +10,6 @@
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const coarse = window.matchMedia("(pointer: coarse)");
   const narrow = window.matchMedia("(max-width: 760px)");
-  const track = document.querySelector("#sightsTrack");
-  const sights = document.querySelector(".sights");
-  const prevBtn = document.querySelector(".sight-prev");
-  const nextBtn = document.querySelector(".sight-next");
   const haze = stage.querySelector(".haze");
   const title = stage.querySelector(".hero-title");
   const intro = stage.querySelector(".intro-copy");
@@ -25,7 +21,7 @@
   });
 
   const IMG_RATIO = 1408 / 768;
-  const STORY = 2600; // التوقيتات تحت محسوبة على 2600px، وبتتمدد على طول القسم الفعلي
+  const STORY = 1900; // التوقيتات تحت محسوبة على 1900px، وبتتمدد على طول القسم الفعلي
   const SEAM = 620 / 1408;
 
   const clamp = (v, min = 0, max = 1) => Math.min(max, Math.max(min, v));
@@ -112,9 +108,7 @@
     const introExit = smoothstep(80, 560, s);
     // 2) التراس بينفتح نصّين والكاميرا بتطير للقلعة، وبتطلع قصتها
     const castle = segmentInOut(s, 420, 900, 1300, 1600);
-    // 3) بطاقات أقسام المنيو بتدخل من الجنب فوق المشهد المغبّش
-    const cardsEnter = Math.pow(smoothstep(1550, 2150, s), 1.55);
-    const controlsEnter = smoothstep(1900, 2250, s);
+    // بعد القلعة بيضل المشهد مغبّش لآخر القصة، انتقال ناعم لقسم المنيو
     const progress = clamp(s / 1600);
 
     const open = Math.pow(castle.enter, 1.5);
@@ -151,12 +145,6 @@
     put(intro, "opacity", (1 - introExit).toFixed(3));
     put(panel, "opacity", castle.active.toFixed(3));
     put(panel, "transform", `translate3d(-50%, calc(-50% + ${(-castle.exit * 86 + (1 - castle.enter) * 58).toFixed(1)}px), 0)`);
-    put(sights.querySelector(".sights-viewport"), "transform",
-      `translate3d(${((1 - cardsEnter) * 120 * (track.dir === "rtl" ? -1 : 1)).toFixed(2)}vw, 0, 0)`);
-    put(sights.querySelector(".sights-title"), "opacity", cardsEnter.toFixed(3));
-    put(sights.querySelector(".sights-controls"), "opacity", controlsEnter.toFixed(3));
-    sights.classList.toggle("is-visible", cardsEnter > 0.01);
-    sights.classList.toggle("is-ready", controlsEnter > 0.98);
 
     if (
       Math.abs(smoothScroll - targetScroll) > 0.08 ||
@@ -173,112 +161,12 @@
     requestAnimationFrame(update);
   }
 
-  // ---------- بطاقات أقسام المنيو (سلايدر لا نهائي) ----------
-  const ICONS = window.RABAD_ICONS;
-
-  let cards = [];
-  let originalCount = 0;
-  let active = 0;
-
-  function renderCards() {
-    const { t, getLang } = window.Rabad;
-    const lang = getLang();
-    const dir = lang === "ar" ? "rtl" : "ltr";
-    const one = window.MENU.map((cat) => {
-      const name = cat[lang];
-      return `
-        <article class="sight-card" tabindex="0" role="button" data-id="${cat.id}"
-                 aria-label="${t("cardOpen")(name)}">
-          <span class="sight-kicker">${t("cardCount")(cat.items.length)}</span>
-          <svg class="sight-pin" viewBox="0 0 48 56" aria-hidden="true">${ICONS[cat.id] || ""}</svg>
-          <h3>${name}</h3>
-          <p>${lang === "ar" ? cat.noteAr : cat.noteEn}</p>
-        </article>`;
-    }).join("");
-    originalCount = window.MENU.length;
-    track.dir = dir;
-    // ٣ نسخ متطابقة، ونبدأ من النسخة النص عشان اللف يكون بلا نهاية
-    track.innerHTML = one + one + one;
-    cards = Array.from(track.children);
-    cards.forEach((card, i) => {
-      card.dataset.index = i;
-      card.addEventListener("click", () => window.Rabad.openCategory(card.dataset.id));
-      card.addEventListener("focus", () => {
-        const i = Number(card.dataset.index);
-        if (i !== active) move(i - active);
-      });
-      card.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          window.Rabad.openCategory(card.dataset.id);
-        }
-      });
-    });
-    jump(originalCount + ((active % originalCount) + originalCount) % originalCount);
-  }
-
-  function layoutCards() {
-    if (!cards.length) return;
-    const w = cards[0].offsetWidth;
-    const gap = parseFloat(getComputedStyle(track).columnGap || "0");
-    track.style.setProperty("--shift", `${-(w + gap) * active}px`);
-    cards.forEach((c, i) => {
-      const inSet = i >= originalCount && i < originalCount * 2;
-      // نخلي بس النسخة النص قابلة للتنقل بالكيبورد
-      c.tabIndex = inSet ? 0 : -1;
-      c.setAttribute("aria-hidden", String(!inSet));
-    });
-  }
-
-  function move(dir) {
-    active += dir;
-    layoutCards();
-  }
-
-  function jump(i) {
-    track.classList.add("is-jumping");
-    active = i;
-    layoutCards();
-    requestAnimationFrame(() => requestAnimationFrame(() => track.classList.remove("is-jumping")));
-  }
-
-  function normalize() {
-    if (active >= originalCount * 2) jump(active - originalCount);
-    else if (active < originalCount) jump(active + originalCount);
-  }
-
-  track.addEventListener("transitionend", (e) => {
-    if (e.target === track) normalize();
-  });
-  prevBtn.addEventListener("click", () => move(-1));
-  nextBtn.addEventListener("click", () => move(1));
-
-  // سحب البطاقات بالإصبع
-  let touchX = null;
-  let touchY = null;
-  track.addEventListener("touchstart", (e) => {
-    touchX = e.touches[0].clientX;
-    touchY = e.touches[0].clientY;
-  }, { passive: true });
-  track.addEventListener("touchend", (e) => {
-    if (touchX === null) return;
-    const dx = e.changedTouches[0].clientX - touchX;
-    const dy = e.changedTouches[0].clientY - touchY;
-    touchX = null;
-    if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
-    const rtl = track.dir === "rtl";
-    // سحب لليسار = البطاقة الجاية بالإنجليزي، والسابقة بالعربي
-    move((dx < 0) !== rtl ? 1 : -1);
-  }, { passive: true });
-
-  document.addEventListener("rabad:lang", renderCards);
   window.addEventListener("scroll", requestTick, { passive: true });
   let resizeTimer = 0;
   window.addEventListener("resize", () => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
       layout();
-      layoutCards();
       requestTick();
     }, 120);
   });
@@ -293,6 +181,5 @@
     { passive: true }
   );
   layout();
-  renderCards();
   requestTick();
 })();
