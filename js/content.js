@@ -98,6 +98,7 @@
     facebook: https(contact.facebook),
   };
   const hero = localPath(C.hero && C.hero.image);
+  const logo = localPath(C.brand && C.brand.logo);
 
   const applyDom = () => {
     document.querySelectorAll("[data-link]").forEach((a) => {
@@ -106,6 +107,17 @@
       if (url) a.href = url;
       if (a.hasAttribute("data-optional")) a.hidden = !url;
     });
+    // شعار الكافيه بدل رسمة القلعة جنب الاسم
+    const mark = document.querySelector(".brand-mark");
+    if (logo && mark) {
+      const img = document.createElement("img");
+      img.className = "brand-logo";
+      img.src = logo;
+      img.alt = "";
+      img.width = 40;
+      img.height = 40;
+      mark.replaceWith(img);
+    }
     if (hero) {
       document.querySelectorAll(".hero picture source").forEach((s) => s.remove());
       const img = document.querySelector(".hero picture img");

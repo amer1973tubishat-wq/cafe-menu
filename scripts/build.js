@@ -61,9 +61,10 @@ function imagePath(v, media, used) {
 function buildContent(dumpDir) {
   if (!dumpDir) fail("usage: build.js content <dump-dir>");
   const dump = path.resolve(dumpDir);
+  // قبل أول تعديل على المنيو ما في menu.json: المنيو بيضل من js/menu-data.js
   const menuDoc = readDoc(path.join(dump, "content", "menu.json"));
   const siteDoc = readDoc(path.join(dump, "content", "site.json")) || {};
-  if (!menuDoc) fail(`${dump}/content/menu.json is missing`);
+  if (!menuDoc && !fs.existsSync(path.join(dump, "content", "site.json"))) fail(`${dump}/content has neither menu.json nor site.json`);
 
   // الصور: data URL ← ملف بـ assets/media
   const media = {};
@@ -87,7 +88,7 @@ function buildContent(dumpDir) {
   }
   const used = new Set();
 
-  const cats = Array.isArray(menuDoc.categories) ? menuDoc.categories : [];
+  const cats = menuDoc && Array.isArray(menuDoc.categories) ? menuDoc.categories : [];
   const seen = new Set();
   const menu = cats
     .filter((c) => c && typeof c === "object")
@@ -126,7 +127,7 @@ function buildContent(dumpDir) {
           }),
       };
     });
-  if (!menu.length) fail("the menu has no categories");
+  if (menuDoc && !menu.length) fail("the menu has no categories");
 
   // النصوص: بس المفاتيح الموجودة بـ i18n.js
   const sandbox = { window: {} };
@@ -151,9 +152,12 @@ function buildContent(dumpDir) {
   if (digits(c.phone).length >= 6) contact.phone = digits(c.phone);
   for (const k of ["mapUrl", "instagram", "facebook"]) if (https(c[k])) contact[k] = https(c[k]);
 
-  const out = { menu, text, theme, contact };
+  const out = { text, theme, contact };
+  if (menu.length) out.menu = menu;
   const heroImg = imagePath(siteDoc.hero && siteDoc.hero.image, media, used);
   if (heroImg) out.hero = { image: heroImg };
+  const logo = imagePath(siteDoc.brand && siteDoc.brand.logo, media, used);
+  if (logo) out.brand = { logo };
 
   // الصور اللي ما حدا بيستعملها ما بتنحفظ
   for (const f of fs.readdirSync(outMedia)) {
@@ -165,7 +169,7 @@ function buildContent(dumpDir) {
     "// بيكتبه scripts/build.js وقت النشر من لوحة التحكم. فاضي = المحتوى الافتراضي.\n" +
     "window.RABAD_CONTENT = " + JSON.stringify(out, null, 1).replace(/</g, "\\u003c") + ";\n";
   fs.writeFileSync(r("js/content-data.js"), js);
-  console.log(`content: ${menu.length} categories, ${menu.reduce((n, x) => n + x.items.length, 0)} items, ${used.size} images`);
+  console.log(`content: ${menuDoc ? "" : "default menu, "}${menu.length} categories, ${menu.reduce((n, x) => n + x.items.length, 0)} items, ${used.size} images`);
 }
 
 // ---------- public ----------

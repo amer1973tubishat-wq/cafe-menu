@@ -23,7 +23,7 @@
   const DOC_MENU = "content/menu";
   const DOC_SITE = "content/site";
   const MENU_FIELDS = ["categories"];
-  const SITE_FIELDS = ["text", "theme", "contact", "hero"];
+  const SITE_FIELDS = ["text", "theme", "contact", "hero", "brand"];
   const FIELDS = MENU_FIELDS.concat(SITE_FIELDS);
   const DOC_LIMIT = 240000;
   const IMG_MAX_CHARS = 190000;
@@ -52,6 +52,11 @@
 
   // النصوص اللي بتتعدّل، مقسّمة حسب مكانها بالموقع
   const TEXT_GROUPS = {
+    cafe: [
+      ["brand", "اسم الكافيه (فوق بالموقع)"],
+      ["title", "عنوان الصفحة (بالتبويب وبجوجل)"],
+      ["footer", "السطر بآخر الصفحة"],
+    ],
     hero: [
       ["heroTitle", "العنوان الكبير"],
       ["heroLead", "السطر تحت العنوان", true],
@@ -59,13 +64,10 @@
       ["heroAlt", "وصف الصورة (للي ما بيشوفوا)"],
     ],
     texts: [
-      ["الاسم والقوائم", [
-        ["brand", "اسم الكافيه"],
-        ["title", "عنوان الصفحة (بالتبويب وبجوجل)"],
+      ["القوائم", [
         ["navMenu", "رابط المنيو"],
         ["navAbout", "رابط عن المكان"],
         ["navVisit", "رابط زورونا"],
-        ["footer", "السطر بآخر الصفحة"],
       ]],
       ["المنيو", [
         ["menuTitle", "عنوان المنيو"],
@@ -136,7 +138,7 @@
   let baseline = null;
   let MEDIA = {};
   let pendingMedia = {};
-  let tab = "items";
+  let tab = "cafe";
   let catFilter = 0;
   const openKeys = new Set();
   let saving = false;
@@ -161,6 +163,7 @@
       theme: Object.assign({}, DEFAULT_THEME),
       contact: Object.assign({}, DEFAULT_CONTACT),
       hero: { image: "" },
+      brand: { logo: "" },
     };
   }
   function normItem(it) {
@@ -188,6 +191,7 @@
       theme: s.theme && typeof s.theme === "object" ? clone(s.theme) : base.theme,
       contact: s.contact && typeof s.contact === "object" ? clone(s.contact) : base.contact,
       hero: s.hero && typeof s.hero === "object" ? clone(s.hero) : base.hero,
+      brand: s.brand && typeof s.brand === "object" ? clone(s.brand) : base.brand,
     };
     out.text.ar = out.text.ar || {};
     out.text.en = out.text.en || {};
@@ -376,7 +380,7 @@
     const next = Object.assign({}, stored);
     fields.forEach((f) => (next[f] = clone(draft[f])));
     const menuDoc = { categories: next.categories, updatedAt: Date.now() };
-    const siteDoc = { text: next.text, theme: next.theme, contact: next.contact, hero: next.hero, updatedAt: Date.now() };
+    const siteDoc = { text: next.text, theme: next.theme, contact: next.contact, hero: next.hero, brand: next.brand, updatedAt: Date.now() };
     const wantMenu = fields.some((f) => MENU_FIELDS.includes(f));
     const wantSite = fields.some((f) => SITE_FIELDS.includes(f));
     if ((wantMenu && JSON.stringify(menuDoc).length > DOC_LIMIT) || (wantSite && JSON.stringify(siteDoc).length > DOC_LIMIT)) {
@@ -533,7 +537,7 @@
     $("#btnLock").hidden = !lockActive();
     $$("#tabs [data-tab]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === tab)));
     const scrollY = window.scrollY;
-    main.innerHTML = ({ items: tabItems, cats: tabCats, hero: tabHero, texts: tabTexts, colors: tabColors, visit: tabVisit, security: tabSecurity })[tab]();
+    main.innerHTML = ({ cafe: tabCafe, items: tabItems, cats: tabCats, hero: tabHero, texts: tabTexts, colors: tabColors, visit: tabVisit, security: tabSecurity })[tab]();
     window.scrollTo(0, scrollY);
     renderSaveState();
     renderPublish();
@@ -590,7 +594,7 @@
       : `<span>${esc(opts.empty || "بدون صورة")}</span>`;
     return `<div class="field"><span class="label">${esc(opts.label || "الصورة")}</span>
       <div class="img-ctl">
-        <div class="img-prev${opts.wide ? " wide" : ""}">${prev}</div>
+        <div class="img-prev${opts.wide ? " wide" : ""}${opts.square ? " square" : ""}">${prev}</div>
         <div class="img-btns">
           <label class="mini upload">${v ? "غيّر الصورة" : "اختار صورة"}<input type="file" accept="image/*" data-img="${path}"></label>
           ${v ? `<button class="mini" type="button" data-act="clear-img" data-path="${path}">${esc(opts.clearLabel || "شيل الصورة")}</button>` : ""}
@@ -662,6 +666,15 @@
       <p class="lede">الأقسام بتطلع بطاقات بقسم المنيو، بنفس الترتيب اللي هون.</p>
       ${list}
       <button class="add" type="button" data-act="cat-add">+ ضيف قسم</button>`;
+  }
+
+  function tabCafe() {
+    return `
+      <p class="lede">اسم الكافيه وشعاره بيطلعوا فوق بكل صفحات الموقع.</p>
+      <section class="card"><h2>الاسم</h2>${TEXT_GROUPS.cafe.map(([k, label]) => textPair(k, label)).join("")}</section>
+      <section class="card"><h2>الشعار</h2>
+        ${imageCtl("brand.logo", { square: true, label: "صورة الشعار", empty: "الشعار الحالي (رسمة القلعة)", clearLabel: "رجّع رسمة القلعة", hint: "صورة مربعة، والشعار بالنص. بتطلع صغيرة جنب الاسم، ومدوّرة الزوايا." })}
+      </section>`;
   }
 
   function tabHero() {
