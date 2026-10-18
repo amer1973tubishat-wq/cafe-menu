@@ -134,7 +134,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 40px;
+  min-height: 44px;
   padding: 0 16px;
   border: 1px solid transparent;
   border-radius: 999px;
@@ -168,6 +168,16 @@ button, input, select, textarea { font: inherit; color: inherit; }
   cursor: pointer;
 }
 
+/* الهاتف: الشريط فوق بيتسكرل مع الصفحة، والتبويبات بس بتضل ثابتة،
+   عشان الكيبورد والشريط ما ياكلوا نص الشاشة وانت بتكتب */
+@media (max-width: 640px) {
+  .bar { position: relative; top: auto; }
+  .tabs { top: env(safe-area-inset-top, 0px) !important; }
+  .brand h1 { font-size: 1.05rem; }
+  .bar-actions { width: 100%; }
+  .bar-actions .btn { flex: 1 1 auto; }
+}
+
 /* ---------- التبويبات ---------- */
 .tabs {
   position: sticky;
@@ -186,9 +196,21 @@ button, input, select, textarea { font: inherit; color: inherit; }
   scrollbar-width: none;
 }
 .tabs-in::-webkit-scrollbar { display: none; }
+/* تدرّج على طرف التبويبات: في تبويبات كمان بالسحب */
+.tabs::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  inset-inline-end: 0;
+  width: 36px;
+  background: linear-gradient(to left, var(--bg), transparent);
+  pointer-events: none;
+}
+[dir="rtl"] .tabs::after { background: linear-gradient(to right, var(--bg), transparent); }
 .tabs button {
   flex: none;
-  min-height: 38px;
+  min-height: 44px;
   padding: 0 14px;
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -248,7 +270,31 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 .field textarea { resize: vertical; line-height: 1.55; }
 .field input[type="number"] { font-variant-numeric: tabular-nums; }
-.field .hint { margin: 0; font-size: 0.76rem; color: var(--muted); }
+.field .hint { margin: 0; font-size: 0.78rem; color: var(--muted); }
+.field .err { margin: 0; font-size: 0.82rem; color: var(--bad); font-weight: 500; }
+.field [aria-invalid="true"] { border-color: var(--bad) !important; }
+
+/* تراجع بعد الحذف */
+.undo {
+  position: fixed;
+  inset-inline: max(16px, env(safe-area-inset-left, 0px));
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 520px;
+  margin-inline: auto;
+  padding: 8px 8px 8px 16px;
+  padding-inline-start: 16px;
+  border-radius: 14px;
+  background: var(--ink);
+  color: var(--bg);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+}
+.undo span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.undo button { min-height: 44px; padding: 0 16px; border: 0; border-radius: 10px; background: var(--bg); color: var(--ink); font-weight: 600; cursor: pointer; }
 .field input[dir="ltr"], .field textarea[dir="ltr"] { text-align: left; }
 
 /* عربي وإنجليزي جنب بعض، وعلى الهاتف تحت بعض */
@@ -304,7 +350,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 .row-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding-top: 4px; border-top: 1px dashed var(--line); }
 .mini {
-  min-height: 38px;
+  min-height: 44px;
   padding: 0 12px;
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -318,7 +364,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .mini.danger.armed { background: var(--bad); border-color: var(--bad); color: var(--accent-ink); }
 .mini select { border: 0; background: transparent; }
 .move { display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--muted); }
-.move select { min-height: 38px; padding: 0 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); }
+.move select { min-height: 44px; padding: 0 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); }
 .add {
   min-height: 50px;
   border: 1.5px dashed var(--line);

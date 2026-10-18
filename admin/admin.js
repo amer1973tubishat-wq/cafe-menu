@@ -335,6 +335,7 @@
       publishAfterSave = false;
       pausedUntil = Date.now() + 15000;
       lastError = saveErrorText(e);
+      showError(lastError);
       try { console.error("[save]", e); } catch (_) { /* ignore */ }
       if (e && e.code === "invalid_argument") probeAccess(3);
       renderSaveState();
@@ -766,6 +767,7 @@
     // ملخص الصنف أو القسم بيتحدّث وانت بتكتب
     const sum = $(`[data-sum="${path}"]`);
     if (sum) sum.textContent = kind === "price" ? `${fmtPrice(v)} د.أ` : (v || "بدون اسم");
+    if (el.getAttribute("aria-invalid") === "true") validate(el);
     changed(e.type === "change" ? 300 : 1100);
   }
   main.addEventListener("input", onInput);
@@ -784,7 +786,41 @@
     const d = e.target;
     if (d.matches && d.matches("details.entry")) d.open ? openKeys.add(d.dataset.key) : openKeys.delete(d.dataset.key);
   }, true);
-  main.addEventListener("focusout", () => { if (hasChanges()) scheduleSave(400); });
+  main.addEventListener("focusout", (e) => {
+    if (e.target.matches && e.target.matches("[data-kind]")) validate(e.target);
+    if (hasChanges()) scheduleSave(400);
+  });
+
+  // خطأ تحت الخانة نفسها، بعد ما تطلع منها
+  function fieldError(el) {
+    const v = String(el.value || "").trim();
+    const kind = el.dataset.kind;
+    if (!v) return "";
+    if (kind === "url" && !/^https:\/\/[^\s"'<>]{3,}$/i.test(v)) return "الرابط لازم يبلّش بـ https://";
+    if (kind === "digits" && v.replace(/[^\d]/g, "").length < 8) return "الرقم قصير. اكتبه مع رمز الدولة، مثل 962791234567";
+    if (kind === "hex" && el.type === "text" && !/^#?[0-9a-f]{6}$/i.test(v)) return "اكتب اللون بالشكل ‎#a3333d";
+    return "";
+  }
+  function validate(el) {
+    const msg = fieldError(el);
+    const field = el.closest(".field");
+    if (!field) return;
+    let p = field.querySelector(".err");
+    if (!msg) {
+      el.removeAttribute("aria-invalid");
+      if (p) p.remove();
+      return;
+    }
+    if (!p) {
+      p = document.createElement("p");
+      p.className = "err";
+      p.id = el.id + "-err";
+      field.appendChild(p);
+    }
+    p.textContent = msg;
+    el.setAttribute("aria-invalid", "true");
+    el.setAttribute("aria-describedby", p.id);
+  }
   document.addEventListener("visibilitychange", () => { if (document.hidden && hasChanges()) runSave(); });
   window.addEventListener("pagehide", () => { if (hasChanges()) runSave(); });
   window.addEventListener("beforeunload", (e) => {
@@ -803,6 +839,25 @@
     }, 4000);
     return false;
   }
+
+  // الحذف بينحفظ لحاله، فبنعطي فرصة تراجع لثمان ثواني
+  let undoSnap = null;
+  let undoTimer = 0;
+  function offerUndo(text, snap) {
+    undoSnap = snap;
+    $("#undoText").textContent = text;
+    $("#undoBar").hidden = false;
+    clearTimeout(undoTimer);
+    undoTimer = setTimeout(() => { $("#undoBar").hidden = true; undoSnap = null; }, 8000);
+  }
+  $("#undoBtn").addEventListener("click", () => {
+    if (!undoSnap || !draft) return;
+    draft.categories = undoSnap;
+    undoSnap = null;
+    $("#undoBar").hidden = true;
+    render();
+    changed(300);
+  });
 
   const move = (arr, i, j) => {
     if (j < 0 || j >= arr.length) return;
@@ -827,6 +882,7 @@
       case "item-down": move(cats[ci].items, ii, ii + 1); openKeys.clear(); openKeys.add(`i:${ci}:${ii + 1}`); break;
       case "item-del":
         if (!armed(btn)) return;
+        offerUndo(`انحذف «${cats[ci].items[ii].ar || cats[ci].items[ii].en || "الصنف"}»`, clone(cats));
         cats[ci].items.splice(ii, 1);
         openKeys.clear();
         break;
@@ -840,6 +896,7 @@
       case "cat-items": catFilter = ci; tab = "items"; openKeys.clear(); render(); window.scrollTo(0, 0); return;
       case "cat-del": {
         if (cats.length < 2 || !armed(btn)) return;
+        offerUndo(`انحذف قسم «${cats[ci].ar || cats[ci].en || ""}»`, clone(cats));
         const [gone] = cats.splice(ci, 1);
         cats[0].items.push(...gone.items);
         catFilter = 0;
@@ -904,8 +961,6 @@
     else text = savedOnce ? "انحفظ وتأكدنا منه بالقاعدة" : "كل إشي محفوظ";
     el.textContent = text;
     el.classList.toggle("bad", !!lastError);
-    const line = $("#errorLine");
-    line.hidden = true;
   }
   function showError(text) {
     const line = $("#errorLine");
