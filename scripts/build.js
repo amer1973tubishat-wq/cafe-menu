@@ -193,7 +193,7 @@ function buildPublic() {
 
   // الصور اللي الصفحة بتطلبها: الواجهة، وكل صورة بالمحتوى
   const files = ["assets/hero.webp", "assets/hero.jpg"];
-  const IMG = /(?:"image"|\bimage):\s*"(assets\/[\w\-./]+\.(?:webp|jpe?g|png))"/gi;
+  const IMG = /(?:"(?:image|logo)"|\b(?:image|logo)):\s*"(assets\/[\w\-./]+\.(?:webp|jpe?g|png))"/gi;
   for (const f of ["js/content-data.js", "js/menu-data.js"]) {
     for (const m of read(f).matchAll(IMG)) files.push(m[1]);
   }
