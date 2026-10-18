@@ -40,7 +40,7 @@ window.RABAD_CONTENT = {
      "en": "Sada coffee",
      "descAr": "قهوة عربية مُرّة بالهيل، تُقدَّم بالفنجان.",
      "descEn": "Bitter Arabic coffee with cardamom, served in a finjan.",
-     "price": 1.85,
+     "price": 2,
      "image": "assets/media/mmve5iu6s5g1n.webp"
     },
     {
