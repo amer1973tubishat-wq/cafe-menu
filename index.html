@@ -116,10 +116,15 @@
           <h3 data-i18n="addressLabel">العنوان</h3>
           <p data-i18n="address">طريق قلعة عجلون، عجلون، الأردن</p>
           <div class="visit-actions">
-            <a class="btn btn-ghost" href="https://www.google.com/maps/search/?api=1&query=Ajloun+Castle" target="_blank" rel="noopener" data-i18n="mapCta">افتح الخريطة</a>
-            <!-- استبدل الرقم برقم واتساب الكافيه -->
-            <a class="btn btn-primary" href="https://wa.me/962700000000" target="_blank" rel="noopener" data-i18n="whatsappCta">احجز طاولة على واتساب</a>
+            <a class="btn btn-ghost" href="https://www.google.com/maps/search/?api=1&query=Ajloun+Castle" target="_blank" rel="noopener" data-link="map" data-i18n="mapCta">افتح الخريطة</a>
+            <!-- رقم الواتساب والروابط بتتعدّل من لوحة التحكم (js/content.js) -->
+            <a class="btn btn-primary" href="https://wa.me/962700000000" target="_blank" rel="noopener" data-link="whatsapp" data-i18n="whatsappCta">احجز طاولة على واتساب</a>
           </div>
+          <p class="visit-links">
+            <a href="#" data-link="phone" data-optional hidden data-i18n="phoneCta">اتصل فينا</a>
+            <a href="#" target="_blank" rel="noopener" data-link="instagram" data-optional hidden>Instagram</a>
+            <a href="#" target="_blank" rel="noopener" data-link="facebook" data-optional hidden>Facebook</a>
+          </p>
         </div>
       </div>
     </section>
@@ -173,6 +178,8 @@
   <script src="js/menu-data.js"></script>
   <script src="js/icons.js"></script>
   <script src="js/i18n.js"></script>
+  <script src="js/content-data.js"></script>
+  <script src="js/content.js"></script>
   <script src="js/app.js"></script>
   <script src="js/item-wheel.js"></script>
 </body>

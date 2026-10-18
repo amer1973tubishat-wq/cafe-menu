@@ -62,12 +62,13 @@
   // كل قسم بطاقة، والكبسة عليها بتفتح عجلة الأصناف (js/item-wheel.js)
   function renderGrid() {
     const ar = state.lang === "ar";
+    const esc = window.RabadEsc;
     gridEl.innerHTML = MENU.map((cat) => {
-      const name = cat[state.lang];
-      const preview = cat.items.slice(0, 3).map((item) => (ar ? item.ar : item.en)).join(ar ? "، " : ", ");
+      const name = esc(cat[state.lang]);
+      const preview = esc(cat.items.slice(0, 3).map((item) => (ar ? item.ar : item.en)).join(ar ? "، " : ", "));
       return `
-        <button class="cat-card" type="button" data-id="${cat.id}" aria-label="${t("cardOpen")(name)}">
-          <svg class="cat-icon" viewBox="0 0 48 56" aria-hidden="true">${window.RABAD_ICONS[cat.id] || ""}</svg>
+        <button class="cat-card" type="button" data-id="${esc(cat.id)}" aria-label="${t("cardOpen")(name)}">
+          <svg class="cat-icon" viewBox="0 0 48 56" aria-hidden="true">${window.RABAD_ICONS[cat.icon || cat.id] || window.RABAD_ICONS.specialty}</svg>
           <span class="cat-count">${t("cardCount")(cat.items.length)}</span>
           <span class="cat-name">${name}</span>
           <span class="cat-preview">${preview}</span>
@@ -169,7 +170,7 @@
     title.innerHTML = title.textContent
       .trim()
       .split(/\s+/)
-      .map((w) => `<span class="word" style="display:inline-block">${w}</span>`)
+      .map((w) => `<span class="word" style="display:inline-block">${window.RabadEsc(w)}</span>`)
       .join(" ");
 
     // مشهد الافتتاح: الصورة بتطلع من العتمة والكاميرا بتقرّب، بعدين الأضواء بتشتعل وحدة ورا الثانية

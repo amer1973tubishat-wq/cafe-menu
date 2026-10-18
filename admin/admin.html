@@ -1,0 +1,53 @@
+<title>لوحة قهوة الربض</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600&family=Reem+Kufi:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="admin.css">
+
+<div id="app" dir="rtl" lang="ar">
+  <header class="bar">
+    <div class="bar-in">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true"><path d="M6 36V14h5v-5h4v5h4v-5h2v5h4v-5h4v5h5v22H24V26a4 4 0 0 0-8 0v10Z" /></svg>
+        <div>
+          <h1>لوحة قهوة الربض</h1>
+          <p class="save-state" id="saveState" role="status">بنوصل لقاعدة البيانات…</p>
+        </div>
+      </div>
+      <div class="bar-actions" id="barActions" hidden>
+        <button class="btn btn-quiet" id="btnLock" type="button" hidden>اقفل</button>
+        <button class="btn btn-quiet" id="btnSave" type="button">احفظ<span class="dot" id="saveDot" hidden></span></button>
+        <button class="btn btn-accent" id="btnPublish" type="button">انشر على الموقع</button>
+      </div>
+    </div>
+    <div class="pub-line" id="pubLine" hidden>
+      <span class="pub-state" id="pubState">ما انتشر لسا</span>
+      <button class="link" id="btnPerms" type="button" hidden>افتح الأذونات</button>
+      <a class="link" id="menuLink" href="#" target="_blank" rel="noopener">افتح المنيو ↗</a>
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabs" aria-label="أقسام اللوحة" hidden>
+    <div class="tabs-in" role="tablist">
+      <button role="tab" type="button" data-tab="items" aria-selected="true">الأصناف</button>
+      <button role="tab" type="button" data-tab="cats" aria-selected="false">الأقسام</button>
+      <button role="tab" type="button" data-tab="hero" aria-selected="false">الواجهة</button>
+      <button role="tab" type="button" data-tab="texts" aria-selected="false">النصوص</button>
+      <button role="tab" type="button" data-tab="colors" aria-selected="false">الألوان</button>
+      <button role="tab" type="button" data-tab="visit" aria-selected="false">الدوام والتواصل</button>
+      <button role="tab" type="button" data-tab="security" aria-selected="false">الأمان</button>
+    </div>
+  </nav>
+
+  <main class="main" id="main">
+    <div class="notice">بنوصل لقاعدة البيانات…</div>
+  </main>
+  <p class="error-line" id="errorLine" role="alert" hidden></p>
+</div>
+
+<script src="../js/menu-data.js"></script>
+<script src="../js/i18n.js"></script>
+<script src="../js/icons.js"></script>
+<script src="admin.js"></script>

@@ -62,12 +62,15 @@
   }
 
   // ألوان البطاقات بالتناوب، كل لون مع لون نص مقروء عليه
+  // ألوان البطاقات من متغيّرات الثيم، فبتتغيّر مع ألوان لوحة التحكم
   const SWATCHES = [
-    { bg: "#1d3a33", fg: "#f2ece0", line: "#c8b48f" },
-    { bg: "#c8b48f", fg: "#10231e", line: "#10231e" },
-    { bg: "#a3333d", fg: "#f2ece0", line: "#f2ece0" },
-    { bg: "#55602f", fg: "#f2ece0", line: "#e6dcc4" },
+    { bg: "var(--oak-raised)", fg: "var(--ivory)", line: "var(--stone)" },
+    { bg: "var(--stone)", fg: "var(--oak-deep)", line: "var(--oak-deep)" },
+    { bg: "var(--pomegranate)", fg: "var(--ivory)", line: "var(--ivory)" },
+    { bg: "color-mix(in srgb, var(--olive) 72%, #000)", fg: "var(--ivory)", line: "color-mix(in srgb, var(--ivory) 85%, var(--stone))" },
   ];
+  const esc = (s) => window.RabadEsc(s);
+  const iconFor = (cat) => window.RABAD_ICONS[cat.icon || cat.id] || window.RABAD_ICONS.specialty;
 
   let category = null;
   let items = [];
@@ -209,12 +212,12 @@
     sheetMedia.style.setProperty("--sw-bg", sw.bg);
     sheetMedia.style.setProperty("--sw-line", sw.line);
     sheetMedia.innerHTML = item.image
-      ? `<img src="${item.image}" alt="${ar ? item.ar : item.en}" decoding="async" draggable="false">`
-      : `<svg viewBox="0 0 48 56" aria-hidden="true">${window.RABAD_ICONS[category.id] || ""}</svg>`;
+      ? `<img src="${esc(item.image)}" alt="${esc(ar ? item.ar : item.en)}" decoding="async" draggable="false">`
+      : `<svg viewBox="0 0 48 56" aria-hidden="true">${iconFor(category)}</svg>`;
     sheetName.textContent = ar ? item.ar : item.en;
     sheetPrice.textContent = formatPrice(item.price);
     const tags = (ar ? item.tagsAr : item.tagsEn) || [];
-    sheetTags.innerHTML = tags.map((tg) => `<li>${tg}</li>`).join("");
+    sheetTags.innerHTML = tags.map((tg) => `<li>${esc(tg)}</li>`).join("");
     sheetTags.hidden = !tags.length;
     sheetDesc.textContent = (ar ? item.longAr : item.longEn) || (ar ? item.descAr : item.descEn);
   }
@@ -264,13 +267,13 @@
     const { formatPrice, getLang } = window.Rabad;
     const lang = getLang();
     const ar = lang === "ar";
-    const icon = window.RABAD_ICONS[category.id] || "";
+    const icon = iconFor(category);
     labelEl.textContent = category[lang];
     drum.innerHTML = items.map((item, i) => {
       const sw = SWATCHES[i % SWATCHES.length];
-      const name = ar ? item.ar : item.en;
+      const name = esc(ar ? item.ar : item.en);
       const art = item.image
-        ? `<img class="wheel-card-img" src="${item.image}" alt="" draggable="false" loading="lazy" decoding="async">`
+        ? `<img class="wheel-card-img" src="${esc(item.image)}" alt="" draggable="false" loading="lazy" decoding="async">`
         : `<svg class="wheel-card-icon" viewBox="0 0 48 56" aria-hidden="true">${icon}</svg>`;
       return `
         <div class="wheel-card${item.image ? " has-image" : ""}" id="wheel-item-${i}" role="option" aria-selected="false" aria-label="${name}"
@@ -285,7 +288,7 @@
     cards = Array.from(drum.children);
 
     indexEl.innerHTML = items.map((item, i) =>
-      `<li><button type="button" data-i="${i}">${ar ? item.ar : item.en}</button></li>`
+      `<li><button type="button" data-i="${i}">${esc(ar ? item.ar : item.en)}</button></li>`
     ).join("");
     indexBtns = Array.from(indexEl.querySelectorAll("button"));
     active = -1;

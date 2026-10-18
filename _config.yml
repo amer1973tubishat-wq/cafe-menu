@@ -1,0 +1,7 @@
+# GitHub Pages: لوحة التحكم وأدوات البناء ما بتنعرض على موقع الزبائن
+exclude:
+  - admin
+  - scripts
+  - tools
+  - dist
+  - README.md
