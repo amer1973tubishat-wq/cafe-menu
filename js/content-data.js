@@ -8,7 +8,7 @@ window.RABAD_CONTENT = {
    "title": "قهوة عين جنا — منيو كافيه في عجلون"
   },
   "en": {
-   "brand": "ain janaCoffee",
+   "brand": "ain jana Coffee",
    "footer": "ain jana Coffee — Ajloun, Jordan",
    "title": "ain jana Coffee — Café menu in Ajloun"
   }
@@ -41,7 +41,7 @@ window.RABAD_CONTENT = {
      "descAr": "قهوة عربية مُرّة بالهيل، تُقدَّم بالفنجان.",
      "descEn": "Bitter Arabic coffee with cardamom, served in a finjan.",
      "price": 2,
-     "image": "assets/media/mmve5iu6s5g1n.webp"
+     "image": "assets/media/mmve67mwi381t.webp"
     },
     {
      "ar": "قهوة تركية",
@@ -325,8 +325,5 @@ window.RABAD_CONTENT = {
    "noteEn": "",
    "items": []
   }
- ],
- "brand": {
-  "logo": "assets/media/mmve5gwev1q8c.webp"
- }
+ ]
 };
