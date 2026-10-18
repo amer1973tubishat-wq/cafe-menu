@@ -14,7 +14,7 @@
 
   // بيتعبّوا بعد ما تنعمل المهمة المجدولة (شوف README)
   const PUBLISH = {
-    trigger: "trig_01AaQULcNTojQBUib4Z33bTM",
+    trigger: "trig_014ru7kuGgzWHMYBk96W2QJN",
     menuUrl: "https://claude.ai/artifact/R7ACEADPPD8tPUvyWZ7mJT",
   };
   const PUBLISH_SERVER = "Claude Code Remote";
