@@ -44,8 +44,8 @@ window.RABAD_CONTENT = {
      "image": "assets/media/mmve81mfe9v4b.webp"
     },
     {
-     "ar": "قهوة تركية",
-     "en": "Turkish coffee",
+     "ar": "قهوة عربي",
+     "en": "Arabic coffee",
      "descAr": "على الرمل، سادة أو وسط أو حلوة.",
      "descEn": "Brewed on hot sand — plain, medium or sweet.",
      "price": 1.75
