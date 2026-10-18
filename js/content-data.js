@@ -317,5 +317,8 @@ window.RABAD_CONTENT = {
    "noteEn": "",
    "items": []
   }
- ]
+ ],
+ "hero": {
+  "image": "assets/media/mmve3q2azu9vt.webp"
+ }
 };
