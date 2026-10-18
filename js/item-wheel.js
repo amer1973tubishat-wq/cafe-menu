@@ -238,8 +238,11 @@
     requestAnimationFrame(() => overlay.classList.add("is-open"));
     stage.focus({ preventScroll: true });
     if (!pushed) {
-      history.pushState({ wheel: id }, "");
-      pushed = true;
+      // بعض الصفحات المضمّنة بتمنع السجل؛ وقتها بنكتفي بزر الإغلاق و Esc
+      try {
+        history.pushState({ wheel: id }, "");
+        pushed = true;
+      } catch (e) { /* history unavailable */ }
     }
     // الحلقة بتبين لحظة، وبعدين بتنفتح أسطوانة لحالها
     clearTimeout(autoOpen);
@@ -272,7 +275,7 @@
     // زر الرجوع بالجوال بيسكّر العجلة؛ والإغلاق من الزر برجّع السجل خطوة
     if (pushed) {
       pushed = false;
-      history.back();
+      try { history.back(); } catch (e) { /* history unavailable */ }
     }
     finishClose();
   }
