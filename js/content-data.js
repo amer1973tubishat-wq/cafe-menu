@@ -2,9 +2,16 @@
 window.RABAD_CONTENT = {
  "text": {
   "ar": {
-   "aboutP1": "على بُعد دقائق من قلعة الربض، اللي بناها عز الدين أسامة سنة ١١٨٤ لتحرس وادي الأردن. من شبابيكنا بتشوف أسوارها وقت الغروب."
+   "aboutP1": "على بُعد دقائق من قلعة الربض، اللي بناها عز الدين أسامة سنة ١١٨٤ لتحرس وادي الأردن. من شبابيكنا بتشوف أسوارها وقت الغروب.",
+   "brand": "قهوة  عين جنا",
+   "footer": "قهوة عين جنا — عجلون، الأردن",
+   "title": "قهوة عين جنا — منيو كافيه في عجلون"
   },
-  "en": {}
+  "en": {
+   "brand": "ain janaCoffee",
+   "footer": "ain jana Coffee — Ajloun, Jordan",
+   "title": "ain jana Coffee — Café menu in Ajloun"
+  }
  },
  "theme": {
   "oak": "#17302a",
@@ -33,7 +40,8 @@ window.RABAD_CONTENT = {
      "en": "Sada coffee",
      "descAr": "قهوة عربية مُرّة بالهيل، تُقدَّم بالفنجان.",
      "descEn": "Bitter Arabic coffee with cardamom, served in a finjan.",
-     "price": 1.5
+     "price": 1.85,
+     "image": "assets/media/mmve5iu6s5g1n.webp"
     },
     {
      "ar": "قهوة تركية",
@@ -319,6 +327,6 @@ window.RABAD_CONTENT = {
   }
  ],
  "brand": {
-  "logo": "assets/media/mmve47ka12k24.webp"
+  "logo": "assets/media/mmve5gwev1q8c.webp"
  }
 };
