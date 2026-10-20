@@ -115,6 +115,16 @@ python3 -m http.server 8000
 
 من إعدادات المستودع: **Settings → Pages**، اختر الفرع والمجلد `/ (root)`.
 
+## النشر على Cloudflare (Workers)
+
+الموقع منشور على Cloudflare Workers (مشروع `ainjana`)، مربوط بهاد المستودع، وبيتحدّث لحاله مع كل رفع على الفرع `claude/inspiring-galileo-88nx9o`، يعني مع كل «انشر على الموقع» من اللوحة. روابط `vercel.app` محجوبة عند بعض شركات الاتصال، وهاد سبب النقل.
+
+الإعدادات (**Settings → Build**):
+- **Production branch:** `claude/inspiring-galileo-88nx9o`
+- **Build command:** `node scripts/build.js public` (بيبني صفحة الزبائن وصورها بس، بدون لوحة التحكم)
+- **Deploy command:** `npx wrangler deploy --assets=./dist/public --name=ainjana --compatibility-date=2026-10-01`
+- **Preview command:** `npx wrangler versions upload --assets=./dist/public --name=ainjana --compatibility-date=2026-10-01`
+
 ## إمكانية الوصول
 - إذا الجهاز مضبوط على تقليل الحركة (`prefers-reduced-motion`)، الانيميشن بيتوقف والمحتوى بيظهر مباشرة.
 - التنقل بين الأقسام بالأسهم من الكيبورد.
