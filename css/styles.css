@@ -909,16 +909,36 @@ html.wheel-open { overflow: hidden; }
 
 @media (max-width: 640px) {
   .wheel-index { display: none; }
+  /* الهاتف: الاسم والسعر على البطاقة، فتحتها بس زر التفاصيل، ثابت تحت عشان ما يركب على البطاقة اللي بعدها.
+     الاسم والوصف بيضلوا لقارئ الشاشة (aria-live) بس ما بينرسموا */
   .wheel-front {
-    top: calc(50% + var(--card-h, 200px) / 2 + 28px);
+    top: auto;
+    bottom: calc(24px + env(safe-area-inset-bottom, 0px));
     inset-inline: 24px;
     width: auto;
     text-align: center;
     transform: none;
   }
-  .wheel-front-name { font-size: 1.7rem; }
-  .wheel-front-desc { margin-top: 8px; font-size: 0.95rem; }
-  .wheel-front-price { margin-top: 8px; font-size: 1.15rem; }
+  .wheel-front-name,
+  .wheel-front-desc,
+  .wheel-front-price {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .wheel-more {
+    margin-top: 0;
+    padding: 0 28px;
+    border-color: var(--stone);
+    background: var(--oak-deep);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+  }
+  .wheel-more:hover { background: var(--oak-raised); }
+  /* التلميح فوق الزر بدل ما يكون تحته */
+  .wheel-hint { bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
   .wheel-count { inset-inline-end: 50%; transform: translateX(50%); bottom: auto; top: calc(30px + env(safe-area-inset-top, 0px)); }
   [dir="rtl"] .wheel-count { transform: translateX(-50%); }
 }
