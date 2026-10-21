@@ -1,0 +1,21 @@
+// موقع الكافيه ولوحة التحكم على Cloudflare Workers.
+// البناء: node standalone/build.js ، والنشر: npx wrangler deploy --config standalone/wrangler.jsonc
+{
+  "name": "cafe-demo",
+  "main": "worker.js",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "../dist/site",
+    "binding": "ASSETS",
+    // السيرفر بيشتغل أول بكل طلب: المحتوى والصور من القاعدة، وحماية صفحة اللوحة
+    "run_worker_first": true
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "cafe-demo-db",
+      "database_id": "db964508-df9c-4321-b035-0431e7dcf389"
+    }
+  ],
+  "observability": { "enabled": true }
+}
