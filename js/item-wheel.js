@@ -298,7 +298,10 @@
   // ---------- الفتح والإغلاق ----------
   function open(id, from) {
     category = window.MENU.find((c) => c.id === id);
-    if (!category) return;
+    if (!category || !category.items.length) {
+      category = null;
+      return;
+    }
     items = category.items;
     opener = from || null;
     moved = false;

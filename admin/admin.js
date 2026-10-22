@@ -360,14 +360,18 @@
     // الصور أول: صنف بيشاور على صورة مش محفوظة بيطلع مكسور
     for (const id of ids) await DB.doc("media/" + id).set({ url: pendingMedia[id], at: Date.now() });
 
+    // اللي بينحفظ هو المسودة زي ما كانت لما بلّش الحفظ. اللي بينكتب وهو بيحفظ بيضل لحفظة جاية،
+    // وما بيخلّي الفحص بعد الكتابة يفكّر إن الحفظ فشل
+    const mine = clone(draft);
     const [m, s] = await Promise.all([DB.doc(DOC_MENU).get(), DB.doc(DOC_SITE).get()]);
     const stored = fromStore(m.exists ? m.data() : null, s.exists ? s.data() : null);
     // الحقل بينكتب إذا انت غيّرته، والقاعدة ما فيها نفس القيمة.
     // إذا ما غيّرته هون بس تغيّر بالقاعدة، هاد تعديل حدا ثاني: منخلّيه.
     const fields = FIELDS.filter((f) => {
-      if (same(draft[f], stored[f])) return false;
-      if (baseline && same(draft[f], baseline[f])) {
-        draft[f] = clone(stored[f]);
+      if (same(mine[f], stored[f])) return false;
+      if (baseline && same(mine[f], baseline[f])) {
+        mine[f] = clone(stored[f]);
+        if (same(draft[f], baseline[f])) draft[f] = clone(stored[f]);
         storeMoved = true;
         return false;
       }
@@ -375,11 +379,11 @@
     });
     if (!fields.length) {
       ids.forEach((id) => delete pendingMedia[id]);
-      baseline = clone(draft);
+      baseline = mine;
       return;
     }
     const next = Object.assign({}, stored);
-    fields.forEach((f) => (next[f] = clone(draft[f])));
+    fields.forEach((f) => (next[f] = clone(mine[f])));
     const menuDoc = { categories: next.categories, updatedAt: Date.now() };
     const siteDoc = { text: next.text, theme: next.theme, contact: next.contact, hero: next.hero, brand: next.brand, updatedAt: Date.now() };
     const wantMenu = fields.some((f) => MENU_FIELDS.includes(f));
@@ -393,10 +397,10 @@
     // بنقرأ اللي انحفظ ونقارن، عشان نقدر نقول «انحفظ» بثقة
     const [m2, s2] = await Promise.all([DB.doc(DOC_MENU).get(), DB.doc(DOC_SITE).get()]);
     const after = fromStore(m2.exists ? m2.data() : null, s2.exists ? s2.data() : null);
-    const bad = fields.filter((f) => !same(draft[f], after[f]));
+    const bad = fields.filter((f) => !same(mine[f], after[f]));
     if (bad.length) throw { kind: "verify", fields: bad };
     ids.forEach((id) => delete pendingMedia[id]);
-    baseline = clone(draft);
+    baseline = mine;
     storeMoved = false;
     pruneMedia(after);
   }

@@ -59,11 +59,12 @@
   }
 
   // ---------- أقسام المنيو ----------
-  // كل قسم بطاقة، والكبسة عليها بتفتح عجلة الأصناف (js/item-wheel.js)
+  // كل قسم بطاقة، والكبسة عليها بتفتح عجلة الأصناف (js/item-wheel.js).
+  // القسم الفاضي (لسا بينبنى باللوحة) ما بيطلع للزبائن
   function renderGrid() {
     const ar = state.lang === "ar";
     const esc = window.RabadEsc;
-    gridEl.innerHTML = MENU.map((cat) => {
+    gridEl.innerHTML = MENU.filter((cat) => cat.items.length).map((cat) => {
       const name = esc(cat[state.lang]);
       const preview = esc(cat.items.slice(0, 3).map((item) => (ar ? item.ar : item.en)).join(ar ? "، " : ", "));
       return `
