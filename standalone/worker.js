@@ -233,7 +233,7 @@ async function compile(env) {
   for (const lang of ["ar", "en"]) {
     const src = srcText[lang] && typeof srcText[lang] === "object" ? srcText[lang] : {};
     for (const k of Object.keys(src).slice(0, 200)) {
-      if (/^[A-Za-z]{1,40}$/.test(k) && isStr(src[k]) && src[k].trim()) text[lang][k] = str(src[k], 2000);
+      if (/^[A-Za-z][A-Za-z0-9]{0,39}$/.test(k) && isStr(src[k]) && src[k].trim()) text[lang][k] = str(src[k], 2000);
     }
   }
 
